@@ -9,6 +9,7 @@ export default function StudentLoginPage() {
   const [loginMode, setLoginMode] = useState<'session' | 'simple'>('session');
   const [sessionCode, setSessionCode] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
+  const [guestName, setGuestName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +35,7 @@ export default function StudentLoginPage() {
           body: JSON.stringify({
             sessionCode: sessionCode.toUpperCase(),
             studentEmail,
+            guestName: guestName.trim() || null,
           }),
         });
 
@@ -147,7 +149,7 @@ export default function StudentLoginPage() {
                 disabled={loading}
               />
               <p className="mt-1 text-xs text-gray-500">
-                先生から共有された4桁のコードを入力
+                教科担当者から共有された4桁のコードを入力
               </p>
             </div>
           )}
@@ -175,6 +177,30 @@ export default function StudentLoginPage() {
                 : '登録済みのメールアドレスを入力'}
             </p>
           </div>
+
+          {/* ゲスト名入力（授業参加モードのみ） */}
+          {loginMode === 'session' && (
+            <div>
+              <label
+                htmlFor="guestName"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                表示名（オプション）
+              </label>
+              <input
+                id="guestName"
+                type="text"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                placeholder="例: 田中太郎"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
+                disabled={loading}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                初めて参加する場合は表示名を入力してください。未入力の場合はメールアドレスから自動生成されます。
+              </p>
+            </div>
+          )}
 
           {/* エラーメッセージ */}
           {error && (

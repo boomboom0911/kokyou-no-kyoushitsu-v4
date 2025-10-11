@@ -109,6 +109,12 @@ export default function CreateSessionPage() {
             </div>
             <div className="flex items-center gap-3">
               <button
+                onClick={() => router.push('/teacher/register-students')}
+                className="text-sm text-green-600 hover:text-green-800 px-4 py-2 rounded-lg hover:bg-green-50"
+              >
+                👥 生徒データ登録
+              </button>
+              <button
                 onClick={() => router.push('/all-classes')}
                 className="text-sm text-purple-600 hover:text-purple-800 px-4 py-2 rounded-lg hover:bg-purple-50"
               >

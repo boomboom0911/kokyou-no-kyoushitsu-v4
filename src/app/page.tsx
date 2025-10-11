@@ -172,7 +172,7 @@ export default function Home() {
                     disabled={studentLoading}
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    先生から共有された4桁のコードを入力
+                    教科担当者から共有された4桁のコードを入力
                   </p>
                 </div>
               )}

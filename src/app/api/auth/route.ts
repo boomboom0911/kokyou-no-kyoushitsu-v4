@@ -5,7 +5,7 @@ import { ApiResponse, AuthResponse } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { sessionCode, studentEmail } = body;
+    const { sessionCode, studentEmail, guestName } = body;
 
     // バリデーション
     if (!sessionCode || !studentEmail) {
@@ -67,8 +67,9 @@ export async function POST(request: NextRequest) {
 
     if (studentError && studentError.code === 'PGRST116') {
       // 生徒が存在しない場合は新規作成
-      const displayName = studentEmail.split('@')[0]; // メールアドレスからデフォルト名生成
-      const studentNumber = displayName; // 仮の出席番号
+      // guestNameが指定されていればそれを使用、なければメールアドレスから生成
+      const displayName = guestName?.trim() || studentEmail.split('@')[0];
+      const studentNumber = studentEmail.split('@')[0]; // メールアドレスの@前を出席番号として使用
 
       const { data: newStudent, error: createError } = await supabase
         .from('students')
