@@ -28,7 +28,7 @@ export default function TeacherDashboardPage() {
   } | null>(null);
 
   useEffect(() => {
-    // 教師認証確認
+    // 教科担当者認証確認
     const teacherAuth = storage.load('teacher_auth');
     if (!teacherAuth?.authenticated) {
       router.push('/teacher');
@@ -376,7 +376,7 @@ export default function TeacherDashboardPage() {
                         key={seat.topic_post.id}
                         post={seat.topic_post}
                         author={seat.student}
-                        currentStudentId={0} // 教師は0を指定
+                        currentStudentId={0} // 教科担当者は0を指定
                         seatNumber={seat.seat_number}
                       />
                     ) : null

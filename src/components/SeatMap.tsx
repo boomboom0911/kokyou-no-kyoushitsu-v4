@@ -11,7 +11,7 @@ interface SeatMapProps {
   selectedSeat?: number | null;
   currentStudentSeat?: number | null;
   currentStudentId?: number; // コメント・リアクション機能のために追加
-  viewMode?: 'teacher' | 'student'; // 教師視点 or 生徒視点（180度回転）
+  viewMode?: 'teacher' | 'student'; // 教科担当者視点 or 生徒視点（180度回転）
 }
 
 export default function SeatMap({
@@ -140,7 +140,7 @@ export default function SeatMap({
         })}
       </div>
 
-      {/* 教師視点: 教卓が下 */}
+      {/* 教科担当者視点: 教卓が下 */}
       {viewMode === 'teacher' && (
         <div className="mt-1.5 flex items-center justify-between">
           <div className="bg-gray-700 text-white px-4 py-1.5 rounded text-xs font-semibold">

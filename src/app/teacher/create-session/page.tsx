@@ -21,7 +21,7 @@ export default function CreateSessionPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // 教師認証確認
+    // 教科担当者認証確認
     const teacherAuth = storage.load('teacher_auth');
     if (!teacherAuth?.authenticated) {
       router.push('/teacher');

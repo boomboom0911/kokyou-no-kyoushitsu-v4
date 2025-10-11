@@ -61,7 +61,7 @@ export default function ChatPanel({ sessionId, currentStudentId }: ChatPanelProp
         },
         body: JSON.stringify({
           sessionId,
-          studentId: currentStudentId === 0 ? null : currentStudentId, // 教師の場合はnull
+          studentId: currentStudentId === 0 ? null : currentStudentId, // 教科担当者の場合はnull
           message: newMessage.trim(),
         }),
       });

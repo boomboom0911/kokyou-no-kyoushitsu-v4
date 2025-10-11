@@ -14,7 +14,7 @@ export default function Home() {
   const [studentLoading, setStudentLoading] = useState(false);
   const [studentError, setStudentError] = useState('');
 
-  // 教師用
+  // 教科担当者用
   const [teacherPassword, setTeacherPassword] = useState('');
   const [teacherLoading, setTeacherLoading] = useState(false);
   const [teacherError, setTeacherError] = useState('');
@@ -86,7 +86,7 @@ export default function Home() {
     }
   };
 
-  // 教師ログイン処理
+  // 教科担当者ログイン処理
   const handleTeacherSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTeacherError('');
@@ -232,11 +232,11 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 右カラム: 教師用 */}
+          {/* 右カラム: 教科担当者用 */}
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="flex items-center gap-3 mb-6">
               <div className="text-4xl">👨‍🏫</div>
-              <h2 className="text-2xl font-bold text-gray-800">教師用</h2>
+              <h2 className="text-2xl font-bold text-gray-800">教科担当者用</h2>
             </div>
 
             <form onSubmit={handleTeacherSubmit} className="space-y-5">
@@ -272,15 +272,15 @@ export default function Home() {
               </button>
             </form>
 
-            {/* 教師機能説明 */}
+            {/* 教科担当者機能説明 */}
             <div className="mt-6 p-4 bg-purple-50 rounded-lg">
               <h3 className="text-sm font-semibold text-gray-800 mb-2">
-                📋 教師機能
+                📋 教科担当者機能
               </h3>
               <ul className="text-xs text-gray-600 space-y-1">
                 <li>• セッション作成と管理</li>
                 <li>• 授業進行状況のリアルタイム確認</li>
-                <li>• 生徒視点/教師視点の切り替え</li>
+                <li>• 生徒視点/教科担当者視点の切り替え</li>
                 <li>• 統計情報の表示</li>
               </ul>
             </div>

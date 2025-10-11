@@ -44,13 +44,13 @@ export default function AllClassesPage() {
       setCurrentStudentId(storedStudent.id);
     }
 
-    // 教師認証を確認
+    // 教科担当者認証を確認
     const teacherAuth = storage.load('teacher_auth');
     const isTeacherAuth = teacherAuth?.authenticated || false;
 
     if (isTeacherAuth) {
       setIsTeacher(true);
-      // 教師の場合、最新のセッションコードを取得
+      // 教科担当者の場合、最新のセッションコードを取得
       const teacherSession = storage.load('teacher_session');
       if (teacherSession?.code) {
         setLatestSessionCode(teacherSession.code);
@@ -74,7 +74,7 @@ export default function AllClassesPage() {
       if (data.success) {
         setSessions(data.data.sessions);
 
-        // 教師の場合、全セッションの欠席者データを取得
+        // 教科担当者の場合、全セッションの欠席者データを取得
         if (isTeacherAuth) {
           const absenteesPromises = data.data.sessions
             .filter((session: SessionSummary) => session.class_id)
@@ -283,7 +283,7 @@ export default function AllClassesPage() {
                         </div>
                       </div>
 
-                      {/* 欠席者リスト（教師のみ） */}
+                      {/* 欠席者リスト（教科担当者のみ） */}
                       {isTeacher && session.class_id && absenteesData[session.id] && (
                         <div>
                           <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
