@@ -2,6 +2,19 @@
 
 教室での議論を可視化・活性化するWebアプリケーション
 
+## 🌐 デモURL
+**https://kokyou-no-kyoushitsu-v4.vercel.app**
+
+すぐに試せます！教師パスワード: `teacher2025`
+
+## 📚 ドキュメント
+
+- 📖 [開発記録](./DEVELOPMENT_FINAL_REPORT.md) - プロジェクトの完成報告書
+- 🎬 [デモガイド](./DEMO_GUIDE.md) - すぐに試せるデモの方法
+- 🏫 [学校導入ガイド](./SCHOOL_DEPLOYMENT_GUIDE.md) - 自分の学校で使う方法
+
+---
+
 ## 📝 概要
 
 生徒が座席上に意見を投稿し、クラス全体で議論を深めるための教育支援アプリケーションです。
