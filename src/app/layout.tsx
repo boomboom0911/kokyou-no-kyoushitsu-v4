@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "公共のキョウシツ v4",
+  title: "コウキョウのキョウシツ v4",
   description: "教室での議論を可視化・活性化するWebアプリケーション",
 };
 

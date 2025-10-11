@@ -113,7 +113,7 @@ export default function Home() {
         {/* ヘッダー */}
         <div className="text-center mb-10">
           <h1 className="text-5xl font-bold text-gray-800 mb-3">
-            🏛️ 公共のキョウシツ v4
+            🏛️ コウキョウのキョウシツ v4
           </h1>
           <p className="text-lg text-gray-600">
             教室での議論を可視化・活性化するWebアプリケーション

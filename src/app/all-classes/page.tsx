@@ -277,7 +277,7 @@ export default function AllClassesPage() {
                         <div className="bg-white rounded-lg p-4">
                           <SeatMap
                             seats={sessionDetails[session.id].seats}
-                            viewMode="teacher"
+                            viewMode="student"
                             currentStudentId={currentStudentId}
                           />
                         </div>
