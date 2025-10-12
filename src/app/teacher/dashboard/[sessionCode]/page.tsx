@@ -348,7 +348,7 @@ export default function TeacherDashboardPage() {
             <div className="lg:col-span-1">
               {session && (
                 <div className="sticky top-6">
-                  <ChatPanel sessionId={session.id} currentStudentId={0} />
+                  <ChatPanel sessionId={session.id} currentStudentId={0} isTeacher={true} />
                 </div>
               )}
             </div>
@@ -388,7 +388,7 @@ export default function TeacherDashboardPage() {
             <div className="lg:col-span-1">
               {session && (
                 <div className="sticky top-6">
-                  <ChatPanel sessionId={session.id} currentStudentId={0} />
+                  <ChatPanel sessionId={session.id} currentStudentId={0} isTeacher={true} />
                 </div>
               )}
             </div>

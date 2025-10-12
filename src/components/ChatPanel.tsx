@@ -15,9 +15,10 @@ interface ChatMessage {
 interface ChatPanelProps {
   sessionId: number;
   currentStudentId: number;
+  isTeacher?: boolean; // 教科担当者の場合true
 }
 
-export default function ChatPanel({ sessionId, currentStudentId }: ChatPanelProps) {
+export default function ChatPanel({ sessionId, currentStudentId, isTeacher = false }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -61,7 +62,7 @@ export default function ChatPanel({ sessionId, currentStudentId }: ChatPanelProp
         },
         body: JSON.stringify({
           sessionId,
-          studentId: currentStudentId === 0 ? null : currentStudentId, // 教科担当者の場合はnull
+          studentId: isTeacher ? null : (currentStudentId === 0 ? -1 : currentStudentId), // 教科担当者はnull、ゲストは-1
           message: newMessage.trim(),
         }),
       });
@@ -106,7 +107,7 @@ export default function ChatPanel({ sessionId, currentStudentId }: ChatPanelProp
                 }`}
               >
                 <div className="text-xs mb-1 opacity-75">
-                  {msg.student?.display_name || (msg.student_id === null ? '👨‍🏫 授業担当者' : '匿名')} •{' '}
+                  {msg.student?.display_name || (msg.student_id === null ? '👨‍🏫 教科担当者' : '匿名')} •{' '}
                   {new Date(msg.created_at).toLocaleTimeString('ja-JP', {
                     hour: '2-digit',
                     minute: '2-digit',
