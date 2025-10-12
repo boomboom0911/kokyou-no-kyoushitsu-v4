@@ -19,13 +19,14 @@ interface StudentRow {
 
 export default function RegisterStudentsPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<'single' | 'bulk'>('single');
+  const [mode, setMode] = useState<'single' | 'bulk' | 'csv'>('single');
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [studentEmail, setStudentEmail] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
   const [bulkData, setBulkData] = useState('');
+  const [csvFile, setCsvFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -94,6 +95,110 @@ export default function RegisterStudentsPage() {
     } catch (err) {
       console.error('Register student error:', err);
       setError('登録中にエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    // CSVテンプレートを生成
+    const template = `google_email,student_number,display_name,class_name
+24001@nansho.ed.jp,1,青山 瑚太郎,2-1
+24002@nansho.ed.jp,2,姉﨑 蒼真,2-1
+24003@nansho.ed.jp,3,有富 琴春,2-1`;
+
+    // Blobを作成してダウンロード
+    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'students_template.csv';
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const handleCsvSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      if (!csvFile) {
+        setError('CSVファイルを選択してください');
+        setLoading(false);
+        return;
+      }
+
+      // CSVファイルを読み込み
+      const text = await csvFile.text();
+      const lines = text.trim().split('\n');
+
+      if (lines.length < 2) {
+        setError('CSVファイルが空です');
+        setLoading(false);
+        return;
+      }
+
+      // ヘッダー行をスキップ
+      const dataLines = lines.slice(1);
+      const students: StudentRow[] = [];
+
+      for (const line of dataLines) {
+        const cols = line.split(',').map(col => col.trim());
+
+        if (cols.length < 3) {
+          setError(`データ形式が不正です。各行に「google_email,student_number,display_name,class_name」を入力してください`);
+          setLoading(false);
+          return;
+        }
+
+        const [email, studentNum, name, className] = cols;
+
+        // クラス名からクラスIDを検索
+        let classId: number | null = null;
+        if (className) {
+          const foundClass = classes.find(c => c.name === className.trim());
+          if (foundClass) {
+            classId = foundClass.id;
+          }
+        }
+
+        students.push({
+          email: email.trim(),
+          displayName: name.trim(),
+          studentNumber: studentNum.trim(),
+          classId,
+        });
+      }
+
+      // 一括登録APIを呼び出し
+      const response = await fetch('/api/students/register-bulk', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ students }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSuccess(`${data.data.success_count}名の生徒を登録しました${data.data.failed_count > 0 ? `（${data.data.failed_count}名失敗）` : ''}`);
+        setCsvFile(null);
+
+        // 失敗した生徒がいる場合は詳細を表示
+        if (data.data.errors && data.data.errors.length > 0) {
+          const errorDetails = data.data.errors.map((err: any) =>
+            `${err.email}: ${err.error}`
+          ).join('\n');
+          setError(`以下の生徒の登録に失敗しました:\n${errorDetails}`);
+        }
+      } else {
+        setError(data.error || 'CSV一括登録に失敗しました');
+      }
+    } catch (err) {
+      console.error('CSV import error:', err);
+      setError('CSVインポート中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -219,6 +324,21 @@ export default function RegisterStudentsPage() {
               }`}
             >
               👤 単一登録
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('csv');
+                setError('');
+                setSuccess('');
+              }}
+              className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${
+                mode === 'csv'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              📄 CSV一括登録
             </button>
             <button
               type="button"
@@ -359,6 +479,100 @@ export default function RegisterStudentsPage() {
                 <li>• 学籍番号は管理用の番号です（例: 2101）</li>
                 <li>• クラスは任意です。複数クラスを担当する生徒などは選択不要です</li>
               </ul>
+            </div>
+          </div>
+        )}
+
+        {/* CSVインポートフォーム */}
+        {mode === 'csv' && (
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <form onSubmit={handleCsvSubmit} className="space-y-6">
+              {/* テンプレートダウンロードボタン */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 className="font-semibold text-purple-900 mb-2">📥 CSVテンプレートをダウンロード</h3>
+                <p className="text-sm text-purple-700 mb-3">
+                  まず、CSVテンプレートをダウンロードして、生徒データを入力してください
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  📄 テンプレートをダウンロード
+                </button>
+              </div>
+
+              {/* CSVファイルアップロード */}
+              <div>
+                <label
+                  htmlFor="csvFile"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  CSVファイル <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="csvFile"
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setCsvFile(file);
+                    setError('');
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  disabled={loading}
+                />
+                {csvFile && (
+                  <p className="text-sm text-green-600 mt-2">
+                    ✓ ファイル選択済み: {csvFile.name}
+                  </p>
+                )}
+              </div>
+
+              {/* 成功メッセージ */}
+              {success && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-green-700 text-sm whitespace-pre-line">{success}</p>
+                </div>
+              )}
+
+              {/* エラーメッセージ */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-700 text-sm whitespace-pre-line">{error}</p>
+                </div>
+              )}
+
+              {/* 登録ボタン */}
+              <button
+                type="submit"
+                disabled={loading || !csvFile}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              >
+                {loading ? 'CSV一括登録中...' : 'CSV一括登録'}
+              </button>
+            </form>
+
+            {/* 説明 */}
+            <div className="mt-6 p-4 bg-purple-50 rounded-lg">
+              <h3 className="font-semibold text-purple-900 mb-2">💡 使い方</h3>
+              <ul className="text-sm text-purple-800 space-y-1">
+                <li>• 「テンプレートをダウンロード」ボタンでCSVファイルを取得</li>
+                <li>• ExcelまたはGoogleスプレッドシートでCSVファイルを開く</li>
+                <li>• 生徒データを入力（列: google_email, student_number, display_name, class_name）</li>
+                <li>• ファイルをCSV形式で保存</li>
+                <li>• 「ファイルを選択」から保存したCSVをアップロード</li>
+                <li>• 「CSV一括登録」ボタンをクリック</li>
+              </ul>
+              <div className="mt-3 p-3 bg-white rounded border border-purple-200">
+                <p className="text-xs text-purple-700 font-semibold mb-1">CSVフォーマット例:</p>
+                <pre className="text-xs text-gray-600 font-mono">
+google_email,student_number,display_name,class_name
+24001@nansho.ed.jp,1,青山 瑚太郎,2-1
+24002@nansho.ed.jp,2,姉﨑 蒼真,2-1
+24003@nansho.ed.jp,3,有富 琴春,2-1
+                </pre>
+              </div>
             </div>
           </div>
         )}

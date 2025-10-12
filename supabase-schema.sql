@@ -1,9 +1,9 @@
--- ============================================================
--- 公共のキョウシツ v4 - Supabase Database Schema
--- ============================================================
+-- ============================================
+-- コウキョウのキョウシツ v4 - データベーススキーマ
+-- ============================================
 
 -- 1. classes (クラスマスタ)
-CREATE TABLE IF NOT EXISTS classes (
+CREATE TABLE classes (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   grade INTEGER,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS classes (
 );
 
 -- 2. students (生徒マスタ)
-CREATE TABLE IF NOT EXISTS students (
+CREATE TABLE students (
   id BIGSERIAL PRIMARY KEY,
   google_email VARCHAR(255) UNIQUE NOT NULL,
   class_id BIGINT REFERENCES classes(id),
@@ -22,11 +22,11 @@ CREATE TABLE IF NOT EXISTS students (
   CONSTRAINT students_email_format CHECK (google_email LIKE '%@%')
 );
 
-CREATE INDEX IF NOT EXISTS idx_students_email ON students(google_email);
-CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);
+CREATE INDEX idx_students_email ON students(google_email);
+CREATE INDEX idx_students_class ON students(class_id);
 
 -- 3. lesson_sessions (授業セッション)
-CREATE TABLE IF NOT EXISTS lesson_sessions (
+CREATE TABLE lesson_sessions (
   id BIGSERIAL PRIMARY KEY,
   code VARCHAR(4) UNIQUE NOT NULL,
   class_id BIGINT REFERENCES classes(id),
@@ -48,11 +48,11 @@ CREATE TABLE IF NOT EXISTS lesson_sessions (
   CONSTRAINT lesson_sessions_period_range CHECK (period >= 1 AND period <= 7)
 );
 
-CREATE INDEX IF NOT EXISTS idx_lesson_sessions_code ON lesson_sessions(code);
-CREATE INDEX IF NOT EXISTS idx_lesson_sessions_active ON lesson_sessions(is_active, started_at DESC);
+CREATE INDEX idx_lesson_sessions_code ON lesson_sessions(code);
+CREATE INDEX idx_lesson_sessions_active ON lesson_sessions(is_active, started_at DESC);
 
 -- 4. seat_assignments (座席割り当て)
-CREATE TABLE IF NOT EXISTS seat_assignments (
+CREATE TABLE seat_assignments (
   id BIGSERIAL PRIMARY KEY,
   session_id BIGINT REFERENCES lesson_sessions(id) ON DELETE CASCADE,
   student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
@@ -68,12 +68,12 @@ CREATE TABLE IF NOT EXISTS seat_assignments (
   UNIQUE(session_id, student_id)       -- 同じ生徒は1つの座席のみ
 );
 
-CREATE INDEX IF NOT EXISTS idx_seat_assignments_session ON seat_assignments(session_id);
-CREATE INDEX IF NOT EXISTS idx_seat_assignments_student_created
+CREATE INDEX idx_seat_assignments_session ON seat_assignments(session_id);
+CREATE INDEX idx_seat_assignments_student_created
   ON seat_assignments(student_id, created_at DESC);
 
 -- 5. topic_posts (トピック投稿)
-CREATE TABLE IF NOT EXISTS topic_posts (
+CREATE TABLE topic_posts (
   id BIGSERIAL PRIMARY KEY,
   session_id BIGINT REFERENCES lesson_sessions(id) ON DELETE CASCADE,
   student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
@@ -86,11 +86,11 @@ CREATE TABLE IF NOT EXISTS topic_posts (
   CONSTRAINT topic_posts_content_not_empty CHECK (length(content) > 0)
 );
 
-CREATE INDEX IF NOT EXISTS idx_topic_posts_session ON topic_posts(session_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_topic_posts_student ON topic_posts(student_id, created_at DESC);
+CREATE INDEX idx_topic_posts_session ON topic_posts(session_id, created_at DESC);
+CREATE INDEX idx_topic_posts_student ON topic_posts(student_id, created_at DESC);
 
 -- 6. chat_messages (チャット)
-CREATE TABLE IF NOT EXISTS chat_messages (
+CREATE TABLE chat_messages (
   id BIGSERIAL PRIMARY KEY,
   session_id BIGINT REFERENCES lesson_sessions(id) ON DELETE CASCADE,
   student_id BIGINT REFERENCES students(id) ON DELETE SET NULL,
@@ -101,10 +101,10 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   CONSTRAINT chat_messages_message_not_empty CHECK (length(message) > 0)
 );
 
-CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id, created_at);
+CREATE INDEX idx_chat_messages_session ON chat_messages(session_id, created_at);
 
--- 7. reactions (リアクション)
-CREATE TABLE IF NOT EXISTS reactions (
+-- 7. reactions (リアクション) - 漢字リアクション
+CREATE TABLE reactions (
   id BIGSERIAL PRIMARY KEY,
 
   -- リアクション対象
@@ -128,11 +128,11 @@ CREATE TABLE IF NOT EXISTS reactions (
   UNIQUE(target_type, target_id, student_id, reaction_type)
 );
 
-CREATE INDEX IF NOT EXISTS idx_reactions_target ON reactions(target_type, target_id);
-CREATE INDEX IF NOT EXISTS idx_reactions_student ON reactions(student_id, created_at DESC);
+CREATE INDEX idx_reactions_target ON reactions(target_type, target_id);
+CREATE INDEX idx_reactions_student ON reactions(student_id, created_at DESC);
 
 -- 8. interactions (コメント)
-CREATE TABLE IF NOT EXISTS interactions (
+CREATE TABLE interactions (
   id BIGSERIAL PRIMARY KEY,
 
   -- コメント対象
@@ -154,11 +154,11 @@ CREATE TABLE IF NOT EXISTS interactions (
     CHECK (length(comment_text) > 0)
 );
 
-CREATE INDEX IF NOT EXISTS idx_interactions_target ON interactions(target_type, target_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_interactions_student ON interactions(student_id, created_at DESC);
+CREATE INDEX idx_interactions_target ON interactions(target_type, target_id, created_at);
+CREATE INDEX idx_interactions_student ON interactions(student_id, created_at DESC);
 
--- 9. learning_memos (学習メモ)
-CREATE TABLE IF NOT EXISTS learning_memos (
+-- 9. learning_memos (学習メモ) - ポートフォリオ機能
+CREATE TABLE learning_memos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
 
@@ -180,36 +180,87 @@ CREATE TABLE IF NOT EXISTS learning_memos (
   CONSTRAINT learning_memos_content_not_empty CHECK (length(content) > 0)
 );
 
-CREATE INDEX IF NOT EXISTS idx_learning_memos_student ON learning_memos(student_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_learning_memos_session ON learning_memos(session_id);
-CREATE INDEX IF NOT EXISTS idx_learning_memos_tags ON learning_memos USING GIN(tags);
-CREATE INDEX IF NOT EXISTS idx_learning_memos_favorite ON learning_memos(student_id, is_favorite, created_at DESC);
+CREATE INDEX idx_learning_memos_student ON learning_memos(student_id, created_at DESC);
+CREATE INDEX idx_learning_memos_session ON learning_memos(session_id);
+CREATE INDEX idx_learning_memos_tags ON learning_memos USING GIN(tags);
+CREATE INDEX idx_learning_memos_favorite ON learning_memos(student_id, is_favorite, created_at DESC);
 
--- 10. export_history (エクスポート履歴) - オプション
-CREATE TABLE IF NOT EXISTS export_history (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  student_id BIGINT REFERENCES students(id),
+-- ============================================
+-- ビュー定義
+-- ============================================
 
-  export_type VARCHAR(50) NOT NULL,  -- 'portfolio' | 'all_discussions' | 'session'
-  file_format VARCHAR(20) NOT NULL,  -- 'csv' | 'json' | 'miro'
+-- student_recent_sessions (最近の授業)
+CREATE VIEW student_recent_sessions AS
+SELECT
+  sa.student_id,
+  ls.id as session_id,
+  ls.code,
+  ls.topic_title,
+  ls.date,
+  ls.period,
+  ls.is_active,
+  c.name as class_name,
+  sa.created_at as joined_at,
+  sa.seat_number,
 
-  exported_at TIMESTAMPTZ DEFAULT NOW()
-);
+  -- 自分の投稿状況
+  EXISTS(
+    SELECT 1 FROM topic_posts tp
+    WHERE tp.session_id = ls.id
+      AND tp.student_id = sa.student_id
+  ) as has_posted_topic,
 
-CREATE INDEX IF NOT EXISTS idx_export_history_student ON export_history(student_id, exported_at DESC);
+  -- メモ数
+  (
+    SELECT COUNT(*) FROM learning_memos lm
+    WHERE lm.session_id = ls.id
+      AND lm.student_id = sa.student_id
+  ) as memo_count
 
--- ============================================================
--- テスト用データ
--- ============================================================
+FROM seat_assignments sa
+JOIN lesson_sessions ls ON sa.session_id = ls.id
+JOIN classes c ON ls.class_id = c.id
+ORDER BY sa.created_at DESC;
 
--- テスト用クラス
-INSERT INTO classes (name, grade) VALUES
-  ('3年A組', 3),
-  ('3年B組', 3)
-ON CONFLICT DO NOTHING;
+-- student_learning_portfolio (ポートフォリオ)
+CREATE VIEW student_learning_portfolio AS
+SELECT
+  lm.id as memo_id,
+  lm.student_id,
+  lm.content as memo_content,
+  lm.tags as memo_tags,
+  lm.is_favorite,
+  lm.created_at as memo_created_at,
+  lm.updated_at as memo_updated_at,
 
--- テスト用生徒（実際の使用時は認証時に自動作成されます）
--- INSERT INTO students (google_email, student_number, display_name, class_id) VALUES
---   ('student1@example.com', '24001', 'テスト生徒1', 1),
---   ('student2@example.com', '24002', 'テスト生徒2', 1)
--- ON CONFLICT (google_email) DO NOTHING;
+  -- セッション情報
+  ls.id as session_id,
+  ls.code as session_code,
+  ls.topic_title,
+  ls.date as session_date,
+  ls.period,
+  c.name as class_name,
+
+  -- 座席番号
+  sa.seat_number,
+
+  -- 自分のトピック投稿
+  tp.id as topic_id,
+  tp.content as my_topic_content,
+  tp.created_at as topic_created_at
+
+FROM learning_memos lm
+LEFT JOIN lesson_sessions ls ON lm.session_id = ls.id
+LEFT JOIN classes c ON ls.class_id = c.id
+LEFT JOIN seat_assignments sa
+  ON sa.session_id = lm.session_id
+  AND sa.student_id = lm.student_id
+LEFT JOIN topic_posts tp
+  ON tp.session_id = lm.session_id
+  AND tp.student_id = lm.student_id
+
+ORDER BY lm.created_at DESC;
+
+-- ============================================
+-- 完了
+-- ============================================
