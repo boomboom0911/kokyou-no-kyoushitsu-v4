@@ -137,13 +137,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 既に同じリアクションをしているかチェック
+    // studentId が 0 または -1 の場合は -999 (教員・ゲスト用固定ID) として検索
+    const actualStudentId = studentId <= 0 ? -999 : studentId;
     const { data: existing } = await supabase
       .from('reactions')
       .select('*')
       .eq('target_type', targetType)
       .eq('target_id', targetId)
-      .eq('student_id', studentId)
       .eq('reaction_type', reactionType)
+      .eq('student_id', actualStudentId)
       .single();
 
     if (existing) {
@@ -157,12 +159,13 @@ export async function POST(request: NextRequest) {
     }
 
     // リアクション追加
+    // studentId が 0 または -1 の場合は -999 (教員・ゲスト用固定ID) を設定
     const { data: reaction, error: insertError } = await supabase
       .from('reactions')
       .insert({
         target_type: targetType,
         target_id: targetId,
-        student_id: studentId,
+        student_id: studentId <= 0 ? -999 : studentId,
         reaction_type: reactionType,
       })
       .select()
@@ -219,13 +222,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     // リアクション削除
+    // studentId が 0 または -1 の場合は -999 として削除
+    const actualStudentId = studentId <= 0 ? -999 : studentId;
     const { error: deleteError } = await supabase
       .from('reactions')
       .delete()
       .eq('target_type', targetType)
       .eq('target_id', targetId)
-      .eq('student_id', studentId)
-      .eq('reaction_type', reactionType);
+      .eq('reaction_type', reactionType)
+      .eq('student_id', actualStudentId);
 
     if (deleteError) {
       console.error('Failed to delete reaction:', deleteError);

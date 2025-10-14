@@ -18,6 +18,23 @@ interface ChatPanelProps {
   isTeacher?: boolean; // 教科担当者の場合true
 }
 
+// 動物アイコンのリスト (42種類 = 座席数と同じ)
+const ANIMAL_ICONS = [
+  '🐶', '🐱', '🐭', '🐹', '🐰', '🐻', '🐼', '🐨', '🐯', '🦁',
+  '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦄', '🐴',
+  '🦊', '🐺', '🦝', '🐗', '🐙', '🦀', '🐌', '🦋', '🐞', '🐝',
+  '🦎', '🐢', '🐍', '🦖', '🦕', '🐊', '🐳', '🐬', '🦈', '🐡',
+  '🦑', '🦐'
+];
+
+// student_idから一意な動物アイコンを取得
+const getAnimalIcon = (studentId: number | null): string => {
+  if (studentId === null || studentId === -1 || studentId === -999 || studentId <= 0) return '';
+
+  const index = studentId % ANIMAL_ICONS.length;
+  return ANIMAL_ICONS[index];
+};
+
 export default function ChatPanel({ sessionId, currentStudentId, isTeacher = false }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -106,12 +123,21 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
                     : 'bg-gray-100 text-gray-800'
                 }`}
               >
-                <div className="text-xs mb-1 opacity-75">
-                  {msg.student?.display_name || (msg.student_id === null ? '👨‍🏫 教科担当者' : '匿名')} •{' '}
-                  {new Date(msg.created_at).toLocaleTimeString('ja-JP', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                <div className="text-xs mb-1 opacity-75 flex items-center gap-1">
+                  {msg.student_id === null || msg.student_id === -999 ? (
+                    <span>👨‍🏫 教科担当者</span>
+                  ) : msg.student_id === -1 ? (
+                    <span>🎭 ゲスト</span>
+                  ) : (
+                    <span className="text-base">{getAnimalIcon(msg.student_id)}</span>
+                  )}
+                  <span>
+                    •{' '}
+                    {new Date(msg.created_at).toLocaleTimeString('ja-JP', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
                 </div>
                 <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
               </div>

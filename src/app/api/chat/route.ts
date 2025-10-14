@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { sessionId, studentEmail, message } = body;
+    const { sessionId, studentId, message } = body;
 
     // バリデーション
     if (!sessionId || !message) {
@@ -111,24 +111,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 生徒情報取得（オプション）
-    let studentId: number | null = null;
-    if (studentEmail) {
-      const { data: student } = await supabase
-        .from('students')
-        .select('id')
-        .eq('google_email', studentEmail)
-        .single();
-
-      studentId = student?.id || null;
-    }
+    // studentId が 0 または -1 の場合は -1 (ゲスト) として設定、null の場合は -999 (教科担当者)
+    const actualStudentId = studentId === null ? -999 : (studentId <= 0 ? -1 : studentId);
 
     // メッセージ投稿
     const { data: chatMessage, error: insertError } = await supabase
       .from('chat_messages')
       .insert({
         session_id: sessionId,
-        student_id: studentId,
+        student_id: actualStudentId,
         message: message.trim(),
       })
       .select()

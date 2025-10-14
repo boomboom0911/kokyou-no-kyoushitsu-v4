@@ -258,9 +258,9 @@ export default function ClassroomPage() {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 pb-1.5 overflow-hidden">
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 pb-1.5 overflow-y-auto">
         {step === 'select_seat' && (
-          <div className="space-y-6">
+          <div className="space-y-6 py-4">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4">座席を選択してください</h2>
               <SeatMap
@@ -278,7 +278,7 @@ export default function ClassroomPage() {
               )}
 
               {selectedSeat && (
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 mb-6 flex justify-center">
                   <button
                     onClick={handleSeatSelect}
                     disabled={loading}

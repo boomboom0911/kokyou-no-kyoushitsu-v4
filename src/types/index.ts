@@ -95,6 +95,8 @@ export interface TopicPost {
   content: string;
   created_at: string;
   updated_at: string;
+  reaction_count?: number; // リアクション総数（オプション）
+  comment_count?: number; // コメント総数（オプション）
 }
 
 export interface Reaction {

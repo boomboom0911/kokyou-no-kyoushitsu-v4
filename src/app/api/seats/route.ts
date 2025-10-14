@@ -53,6 +53,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // トピックIDのリストを取得
+    const topicIds = (assignments || [])
+      .filter((a) => a.topic_posts && a.topic_posts.length > 0)
+      .map((a) => a.topic_posts[0].id);
+
+    // リアクション数とコメント数を集計
+    let reactionCounts: Record<number, number> = {};
+    let commentCounts: Record<number, number> = {};
+
+    if (topicIds.length > 0) {
+      // リアクション数を取得
+      const { data: reactions } = await supabase
+        .from('reactions')
+        .select('target_id')
+        .eq('target_type', 'topic')
+        .in('target_id', topicIds);
+
+      if (reactions) {
+        reactions.forEach((r) => {
+          reactionCounts[r.target_id] = (reactionCounts[r.target_id] || 0) + 1;
+        });
+      }
+
+      // コメント数を取得
+      const { data: comments } = await supabase
+        .from('interactions')
+        .select('target_id')
+        .eq('target_type', 'topic')
+        .eq('type', 'comment')
+        .in('target_id', topicIds);
+
+      if (comments) {
+        comments.forEach((c) => {
+          commentCounts[c.target_id] = (commentCounts[c.target_id] || 0) + 1;
+        });
+      }
+    }
+
     // 座席情報を整形（seat_assignment_idも含める）
     const seats = (assignments || []).map((assignment) => ({
       seat_number: assignment.seat_number,
@@ -76,6 +114,8 @@ export async function GET(request: NextRequest) {
               session_id: Number(sessionId),
               student_id: assignment.student_id,
               seat_assignment_id: assignment.id,
+              reaction_count: reactionCounts[assignment.topic_posts[0].id] || 0,
+              comment_count: commentCounts[assignment.topic_posts[0].id] || 0,
             }
           : null,
     }));

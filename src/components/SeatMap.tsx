@@ -87,7 +87,21 @@ export default function SeatMap({
               {seat.student?.display_name}
             </div>
             {seat.topic_post && (
-              <div className="mt-0.5 w-1.5 h-1.5 bg-green-500 rounded-full" title="投稿済み" />
+              <div className="mt-0.5 flex items-center gap-0.5">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full" title="投稿済み" />
+                {/* リアクション数バッジ */}
+                {seat.topic_post.reaction_count !== undefined && seat.topic_post.reaction_count > 0 && (
+                  <span className="text-[9px] bg-orange-100 text-orange-700 px-1 rounded" title="リアクション数">
+                    👍{seat.topic_post.reaction_count}
+                  </span>
+                )}
+                {/* コメント数バッジ */}
+                {seat.topic_post.comment_count !== undefined && seat.topic_post.comment_count > 0 && (
+                  <span className="text-[9px] bg-blue-100 text-blue-700 px-1 rounded" title="コメント数">
+                    💬{seat.topic_post.comment_count}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -193,6 +207,7 @@ export default function SeatMap({
                 author={seatMap.get(hoveredSeat)!.student!}
                 currentStudentId={currentStudentId}
                 seatNumber={hoveredSeat}
+                autoShowComments={true}
               />
 
               {/* 閉じるボタン */}

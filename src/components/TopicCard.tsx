@@ -20,6 +20,7 @@ interface TopicCardProps {
   currentStudentId: number;
   seatNumber: number;
   onReactionChange?: () => void;
+  autoShowComments?: boolean; // コメントを最初から表示するか
 }
 
 export default function TopicCard({
@@ -28,9 +29,10 @@ export default function TopicCard({
   currentStudentId,
   seatNumber,
   onReactionChange,
+  autoShowComments = false,
 }: TopicCardProps) {
   const [comments, setComments] = useState<Comment[]>([]);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(autoShowComments);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -141,7 +143,9 @@ export default function TopicCard({
                   <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium text-gray-700">
-                        {comment.student?.display_name || '匿名'}
+                        {comment.student_id === null || comment.student_id === 0 || comment.student_id === -1
+                          ? '👨‍🏫 教科担当者'
+                          : comment.student?.display_name || '匿名'}
                       </span>
                       <span className="text-xs text-gray-400">
                         {new Date(comment.created_at).toLocaleString('ja-JP', {
