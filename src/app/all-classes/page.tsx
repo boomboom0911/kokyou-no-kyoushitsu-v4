@@ -64,6 +64,11 @@ export default function AllClassesPage() {
   const [latestSessionCode, setLatestSessionCode] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState<boolean>(false);
   const [absenteesData, setAbsenteesData] = useState<Record<number, { count: number; students: Array<{ id: number; student_number: string; display_name: string }> }>>({});
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     // ログイン中の生徒情報を取得
@@ -199,6 +204,51 @@ export default function AllClassesPage() {
     }
   };
 
+  const handleOpenEditModal = (session: SessionSummary) => {
+    setEditingSessionId(session.id);
+    setEditTitle(session.topic_title);
+    setEditContent(session.topic_content || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingSessionId || !editTitle.trim() || editLoading) return;
+
+    setEditLoading(true);
+    try {
+      const response = await fetch(`/api/sessions?id=${editingSessionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topicTitle: editTitle.trim(),
+          topicContent: editContent.trim() || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // セッションリストを更新
+        setSessions(sessions.map(s =>
+          s.id === editingSessionId
+            ? { ...s, topic_title: editTitle.trim(), topic_content: editContent.trim() || null }
+            : s
+        ));
+        setShowEditModal(false);
+        setEditingSessionId(null);
+      } else {
+        alert('更新に失敗しました: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Failed to update session:', error);
+      alert('更新中にエラーが発生しました');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -271,15 +321,27 @@ export default function AllClassesPage() {
                         🕐 {session.period}時限
                       </span>
                     </div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">
+                    <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
                       {session.class_name && (
                         <span className="text-purple-600">{session.class_name} | </span>
                       )}
                       {session.topic_title}
+                      {isTeacher && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEditModal(session);
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                          title="テーマを編集"
+                        >
+                          ✏️ 編集
+                        </button>
+                      )}
                     </h2>
                     {session.topic_content && (
                       <p className="text-sm text-gray-600 mb-3">
-                        {session.topic_content}
+                        📋 {session.topic_content}
                       </p>
                     )}
                     <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -433,6 +495,84 @@ export default function AllClassesPage() {
           ))
         )}
       </div>
+
+      {/* セッション編集モーダル（教員のみ） */}
+      {showEditModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              セッション情報を編集
+            </h2>
+
+            <div className="space-y-4">
+              {/* タイトル編集 */}
+              <div>
+                <label
+                  htmlFor="editTitle"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  授業タイトル <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="editTitle"
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  placeholder="例: 民主主義とは何か"
+                />
+              </div>
+
+              {/* 説明編集 */}
+              <div>
+                <label
+                  htmlFor="editContent"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  授業の記録・メモ（授業後の振り返りや補足説明）
+                </label>
+                <textarea
+                  id="editContent"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  rows={6}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 placeholder:text-gray-400"
+                  placeholder="授業の記録や振り返りを入力してください..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ※この説明は「過去の授業」画面で表示されます
+                </p>
+              </div>
+
+              {/* ボタン */}
+              <div className="flex gap-3 justify-end mt-6">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingSessionId(null);
+                  }}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={editLoading || !editTitle.trim()}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                >
+                  {editLoading ? '保存中...' : '保存'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

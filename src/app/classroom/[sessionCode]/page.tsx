@@ -307,14 +307,6 @@ export default function ClassroomPage() {
                 />
               </div>
 
-              {/* セッション説明（座席マップの直後に移動） */}
-              {session?.topic_content && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg shadow p-4">
-                  <h3 className="text-sm font-semibold text-blue-900 mb-2">📝 今日のテーマ</h3>
-                  <p className="text-sm text-blue-800">{session.topic_content}</p>
-                </div>
-              )}
-
               {/* トピック投稿（投稿していない場合のみ表示） */}
               {!hasPosted && (
                 <div className="bg-white rounded-lg shadow p-6">
