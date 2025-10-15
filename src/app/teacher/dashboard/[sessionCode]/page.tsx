@@ -21,6 +21,10 @@ export default function TeacherDashboardPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showAbsenteesModal, setShowAbsenteesModal] = useState(false);
   const [showSessionCodeModal, setShowSessionCodeModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
   const [absenteeData, setAbsenteeData] = useState<{
     total: number;
     attendees: number;
@@ -125,6 +129,44 @@ export default function TeacherDashboardPage() {
     setShowSessionCodeModal(true);
   };
 
+  const handleOpenEditModal = () => {
+    setEditTitle(session?.topic_title || '');
+    setEditContent(session?.topic_content || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!session?.id || !editTitle.trim() || editLoading) return;
+
+    setEditLoading(true);
+    try {
+      const response = await fetch(`/api/sessions?id=${session.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topicTitle: editTitle.trim(),
+          topicContent: editContent.trim() || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSession(data.data);
+        setShowEditModal(false);
+      } else {
+        alert('更新に失敗しました: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Failed to update session:', error);
+      alert('更新中にエラーが発生しました');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const handleCopySessionCode = () => {
     navigator.clipboard.writeText(sessionCode).then(() => {
       // コピー成功のフィードバック
@@ -189,6 +231,13 @@ export default function TeacherDashboardPage() {
               </h1>
               <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
                 <span className="font-semibold">{session?.topic_title}</span>
+                <button
+                  onClick={handleOpenEditModal}
+                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                  title="テーマを編集"
+                >
+                  ✏️ 編集
+                </button>
                 <span>|</span>
                 <span>セッションコード:</span>
                 <span
@@ -452,6 +501,78 @@ export default function TeacherDashboardPage() {
                   閉じる
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 授業テーマ編集モーダル */}
+      {showEditModal && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowEditModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">
+              ✏️ 授業テーマの編集
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="editTitle"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  授業タイトル <span className="text-red-600">*</span>
+                </label>
+                <input
+                  id="editTitle"
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="例: 環境問題について考える"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
+                  disabled={editLoading}
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="editContent"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  授業内容（オプション）
+                </label>
+                <textarea
+                  id="editContent"
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  placeholder="例: 地球温暖化の原因と対策について議論しましょう"
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 placeholder:text-gray-400"
+                  disabled={editLoading}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowEditModal(false)}
+                disabled={editLoading}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editLoading || !editTitle.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+              >
+                {editLoading ? '保存中...' : '保存'}
+              </button>
             </div>
           </div>
         </div>

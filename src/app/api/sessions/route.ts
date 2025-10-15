@@ -168,6 +168,90 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * PUT /api/sessions?id={sessionId}
+ * セッション情報を更新（教師用）
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const sessionId = searchParams.get('id');
+    const body = await request.json();
+    const { topicTitle, topicContent } = body;
+
+    // バリデーション
+    if (!sessionId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'セッションIDは必須です',
+        } as ApiResponse<never>,
+        { status: 400 }
+      );
+    }
+
+    if (!topicTitle) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'トピックタイトルは必須です',
+        } as ApiResponse<never>,
+        { status: 400 }
+      );
+    }
+
+    // セッション更新
+    const { data: session, error } = await supabase
+      .from('lesson_sessions')
+      .update({
+        topic_title: topicTitle,
+        topic_content: topicContent || null,
+      })
+      .eq('id', parseInt(sessionId, 10))
+      .select()
+      .single();
+
+    if (error || !session) {
+      console.error('Failed to update session:', error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'セッションの更新に失敗しました',
+        } as ApiResponse<never>,
+        { status: 500 }
+      );
+    }
+
+    const response: ApiResponse<LessonSession> = {
+      success: true,
+      data: {
+        id: session.id,
+        code: session.code,
+        class_id: session.class_id,
+        topic_title: session.topic_title,
+        topic_content: session.topic_content,
+        date: session.date,
+        period: session.period,
+        is_active: session.is_active,
+        started_at: session.started_at,
+        ended_at: session.ended_at,
+      },
+      message: 'セッションを更新しました',
+    };
+
+    return NextResponse.json(response, { status: 200 });
+  } catch (error) {
+    console.error('PUT sessions error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'セッション更新中にエラーが発生しました',
+      } as ApiResponse<never>,
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * 4桁のランダムな英数字コードを生成
  */
 function generateSessionCode(): string {

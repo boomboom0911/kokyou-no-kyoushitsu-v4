@@ -19,10 +19,36 @@ interface SessionSummary {
   started_at: string;
 }
 
+interface ChatMessage {
+  id: number;
+  student_id: number;
+  message: string;
+  created_at: string;
+  student?: {
+    display_name: string;
+  };
+}
+
 interface SessionDetails {
   seats: SeatWithStudent[];
   chat_count: number;
 }
+
+// 動物アイコンのリスト (42種類)
+const ANIMAL_ICONS = [
+  '🐶', '🐱', '🐭', '🐹', '🐰', '🐻', '🐼', '🐨', '🐯', '🦁',
+  '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦄', '🐴',
+  '🦊', '🐺', '🦝', '🐗', '🐙', '🦀', '🐌', '🦋', '🐞', '🐝',
+  '🦎', '🐢', '🐍', '🦖', '🦕', '🐊', '🐳', '🐬', '🦈', '🐡',
+  '🦑', '🦐'
+];
+
+// student_idから一意な動物アイコンを取得
+const getAnimalIcon = (studentId: number | null): string => {
+  if (studentId === null || studentId === -1 || studentId === -999 || studentId <= 0) return '';
+  const index = studentId % ANIMAL_ICONS.length;
+  return ANIMAL_ICONS[index];
+};
 
 export default function AllClassesPage() {
   const router = useRouter();
@@ -32,6 +58,8 @@ export default function AllClassesPage() {
   const [sessionDetails, setSessionDetails] = useState<Record<number, SessionDetails>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<number, boolean>>({});
   const [showChat, setShowChat] = useState<Record<number, boolean>>({});
+  const [chatMessages, setChatMessages] = useState<Record<number, ChatMessage[]>>({});
+  const [loadingChat, setLoadingChat] = useState<Record<number, boolean>>({});
   const [currentStudentId, setCurrentStudentId] = useState<number>(0);
   const [latestSessionCode, setLatestSessionCode] = useState<string | null>(null);
   const [isTeacher, setIsTeacher] = useState<boolean>(false);
@@ -151,11 +179,23 @@ export default function AllClassesPage() {
   };
 
   const handleChatToggle = async (sessionId: number) => {
-    setShowChat({ ...showChat, [sessionId]: !showChat[sessionId] });
+    const isShowing = showChat[sessionId];
+    setShowChat({ ...showChat, [sessionId]: !isShowing });
 
     // チャット履歴を取得（まだ取得していない場合）
-    if (!showChat[sessionId]) {
-      // TODO: チャット履歴取得API呼び出し
+    if (!isShowing && !chatMessages[sessionId]) {
+      setLoadingChat({ ...loadingChat, [sessionId]: true });
+      try {
+        const response = await fetch(`/api/chat?sessionId=${sessionId}`);
+        const data = await response.json();
+        if (data.success) {
+          setChatMessages({ ...chatMessages, [sessionId]: data.data });
+        }
+      } catch (error) {
+        console.error('Failed to fetch chat messages:', error);
+      } finally {
+        setLoadingChat({ ...loadingChat, [sessionId]: false });
+      }
     }
   };
 
@@ -337,10 +377,47 @@ export default function AllClassesPage() {
                         </button>
 
                         {showChat[session.id] && (
-                          <div className="mt-3 bg-white rounded-lg p-4">
-                            <p className="text-sm text-gray-500 text-center py-4">
-                              チャット履歴の表示機能は実装中です
-                            </p>
+                          <div className="mt-3 bg-white rounded-lg p-4 max-h-96 overflow-y-auto">
+                            {loadingChat[session.id] ? (
+                              <p className="text-sm text-gray-500 text-center py-4">
+                                読み込み中...
+                              </p>
+                            ) : chatMessages[session.id] && chatMessages[session.id].length > 0 ? (
+                              <div className="space-y-3">
+                                {chatMessages[session.id].map((msg) => (
+                                  <div key={msg.id} className="border-b border-gray-100 pb-3 last:border-b-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium text-gray-700">
+                                        {msg.student_id === null || msg.student_id === -999 ? (
+                                          '👨‍🏫 教科担当者'
+                                        ) : msg.student_id === -1 ? (
+                                          '🎭 ゲスト'
+                                        ) : (
+                                          <span className="flex items-center gap-1">
+                                            <span className="text-base">{getAnimalIcon(msg.student_id)}</span>
+                                          </span>
+                                        )}
+                                      </span>
+                                      <span className="text-xs text-gray-400">
+                                        {new Date(msg.created_at).toLocaleString('ja-JP', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
+                                      {msg.message}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500 text-center py-4">
+                                チャット履歴はありません
+                              </p>
+                            )}
                           </div>
                         )}
                       </div>

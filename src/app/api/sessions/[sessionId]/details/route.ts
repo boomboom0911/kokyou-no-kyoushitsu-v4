@@ -48,7 +48,7 @@ export async function GET(
     }
 
     // 各座席のトピック投稿を取得
-    const seats: SeatWithStudent[] = await Promise.all(
+    const seatsWithPosts: SeatWithStudent[] = await Promise.all(
       (seatAssignments || []).map(async (assignment) => {
         // トピック投稿を取得
         const { data: topicPost } = await supabase
@@ -72,6 +72,52 @@ export async function GET(
         };
       })
     );
+
+    // トピックIDのリストを取得
+    const topicIds = seatsWithPosts
+      .filter((seat) => seat.topic_post)
+      .map((seat) => seat.topic_post!.id);
+
+    // リアクション数を集計
+    let reactionCounts: Record<number, number> = {};
+    if (topicIds.length > 0) {
+      const { data: reactions } = await supabase
+        .from('reactions')
+        .select('target_id')
+        .eq('target_type', 'topic')
+        .in('target_id', topicIds);
+
+      reactions?.forEach((reaction) => {
+        reactionCounts[reaction.target_id] = (reactionCounts[reaction.target_id] || 0) + 1;
+      });
+    }
+
+    // コメント数を集計
+    let commentCounts: Record<number, number> = {};
+    if (topicIds.length > 0) {
+      const { data: comments } = await supabase
+        .from('interactions')
+        .select('target_id')
+        .eq('target_type', 'topic')
+        .eq('type', 'comment')
+        .in('target_id', topicIds);
+
+      comments?.forEach((comment) => {
+        commentCounts[comment.target_id] = (commentCounts[comment.target_id] || 0) + 1;
+      });
+    }
+
+    // カウント情報を座席データに追加
+    const seats: SeatWithStudent[] = seatsWithPosts.map((seat) => ({
+      ...seat,
+      topic_post: seat.topic_post
+        ? {
+            ...seat.topic_post,
+            reaction_count: reactionCounts[seat.topic_post.id] || 0,
+            comment_count: commentCounts[seat.topic_post.id] || 0,
+          }
+        : null,
+    }));
 
     // チャット件数を取得
     const { count: chatCount } = await supabase
