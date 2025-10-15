@@ -277,6 +277,7 @@ CREATE INDEX idx_chat_session ON chat_messages(session_id, created_at);
 | 日付 | 追加者 | 追加内容 |
 |------|--------|---------|
 | 2025-10-14 | Claude Code | 初版作成。生徒データ編集・削除機能、データベーススキーマ改善、技術的負債を記録 |
+| 2025-10-15 | Claude Code | v4で修正した不具合を確認。v5への新規申し送り事項なし |
 
 ---
 
