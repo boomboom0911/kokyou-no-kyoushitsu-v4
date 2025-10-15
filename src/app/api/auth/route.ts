@@ -103,6 +103,21 @@ export async function POST(request: NextRequest) {
         } as ApiResponse<never>,
         { status: 500 }
       );
+    } else if (student && guestName?.trim()) {
+      // 既存生徒でguestNameが指定されている場合は表示名を更新
+      const { data: updatedStudent, error: updateError } = await supabase
+        .from('students')
+        .update({ display_name: guestName.trim() })
+        .eq('id', student.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Failed to update student display name:', updateError);
+        // 更新失敗してもログインは継続
+      } else if (updatedStudent) {
+        student = updatedStudent;
+      }
     }
 
     if (!student) {
