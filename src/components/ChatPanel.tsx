@@ -40,6 +40,8 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isUserScrollingRef = useRef(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMessages();
@@ -48,11 +50,24 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
   }, [sessionId]);
 
   useEffect(() => {
-    scrollToBottom();
+    // 自動スクロールは、ユーザーが手動でスクロールしていない場合のみ実行
+    if (!isUserScrollingRef.current) {
+      scrollToBottom();
+    }
   }, [messages]);
+
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50; // 50px以内なら下にいるとみなす
+
+    isUserScrollingRef.current = !isAtBottom;
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    isUserScrollingRef.current = false;
   };
 
   const fetchMessages = async () => {
@@ -105,7 +120,11 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
       </div>
 
       {/* メッセージ一覧 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div
+        ref={chatContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+      >
         {messages.length === 0 ? (
           <div className="text-center text-gray-400 text-sm mt-8">
             まだメッセージがありません

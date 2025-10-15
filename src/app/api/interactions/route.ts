@@ -126,13 +126,13 @@ export async function POST(request: NextRequest) {
     }
 
     // コメント投稿
-    // studentId が 0 または -1 の場合は教科担当者として null を設定
+    // studentId が 0, -1, -999 の場合は教科担当者として null を設定
     const { data: interaction, error: insertError } = await supabase
       .from('interactions')
       .insert({
         target_type: targetType,
         target_id: targetId,
-        student_id: studentId <= 0 ? null : studentId,
+        student_id: (studentId <= 0 || studentId === -999) ? null : studentId,
         type: 'comment',
         comment_text: commentText.trim(),
       })

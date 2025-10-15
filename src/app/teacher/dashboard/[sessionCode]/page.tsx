@@ -340,7 +340,7 @@ export default function TeacherDashboardPage() {
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold mb-4">座席マップ</h2>
-                <SeatMap seats={seats} viewMode={viewMode} currentStudentId={0} />
+                <SeatMap seats={seats} viewMode={viewMode} currentStudentId={-999} />
               </div>
             </div>
 
@@ -376,7 +376,7 @@ export default function TeacherDashboardPage() {
                         key={seat.topic_post.id}
                         post={seat.topic_post}
                         author={seat.student}
-                        currentStudentId={0} // 教科担当者は0を指定
+                        currentStudentId={-999} // 教科担当者は-999を指定
                         seatNumber={seat.seat_number}
                       />
                     ) : null

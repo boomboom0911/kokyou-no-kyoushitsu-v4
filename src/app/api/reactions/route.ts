@@ -66,8 +66,12 @@ export async function GET(request: NextRequest) {
       counts[type] = (counts[type] || 0) + 1;
 
       // 自分のリアクションを記録
-      if (studentId && reaction.student_id === Number(studentId)) {
-        myReactions.push(type);
+      // studentId が -999 の場合、データベースの -999 と比較
+      if (studentId) {
+        const actualStudentId = Number(studentId) <= 0 ? -999 : Number(studentId);
+        if (reaction.student_id === actualStudentId) {
+          myReactions.push(type);
+        }
       }
     });
 

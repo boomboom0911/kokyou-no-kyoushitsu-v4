@@ -143,7 +143,7 @@ export default function TopicCard({
                   <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-medium text-gray-700">
-                        {comment.student_id === null || comment.student_id === 0 || comment.student_id === -1
+                        {comment.student_id === null || comment.student_id === 0 || comment.student_id === -1 || comment.student_id === -999
                           ? '👨‍🏫 教科担当者'
                           : comment.student?.display_name || '匿名'}
                       </span>
