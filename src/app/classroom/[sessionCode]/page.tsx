@@ -317,7 +317,7 @@ export default function ClassroomPage() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  📝 みんなのトピック
+                  📝 提出トピック一覧
                 </button>
               </div>
             </div>
@@ -390,7 +390,7 @@ export default function ClassroomPage() {
                 {/* 右カラム: チャットパネル */}
                 <div className="lg:col-span-1">
                   {student && session && (
-                    <div className="sticky top-3">
+                    <div className="sticky top-3 h-[calc(100vh-8rem)]">
                       <ChatPanel sessionId={session.id} currentStudentId={student.id} />
                     </div>
                   )}
@@ -404,9 +404,9 @@ export default function ClassroomPage() {
                 {/* ヘッダー */}
                 <div className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
                   <div>
-                    <h2 className="text-xl font-semibold">📝 みんなのトピック</h2>
+                    <h2 className="text-xl font-semibold">📝 提出トピック一覧</h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      クラスメイトの投稿を確認できます（新しい順）
+                      この授業で提出されたトピックを確認できます（新しい順）
                     </p>
                   </div>
                   <button

@@ -5,7 +5,7 @@ import { ApiResponse, AuthResponse } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { sessionCode, studentEmail, guestName } = body;
+    const { sessionCode, studentEmail } = body;
 
     // バリデーション
     if (!sessionCode || !studentEmail) {
@@ -58,43 +58,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 生徒情報取得または作成
-    let { data: student, error: studentError } = await supabase
+    // 生徒情報取得
+    const { data: student, error: studentError } = await supabase
       .from('students')
       .select('*')
       .eq('google_email', studentEmail)
       .single();
 
+    // 未登録の場合は拒否
     if (studentError && studentError.code === 'PGRST116') {
-      // 生徒が存在しない場合は新規作成
-      // guestNameが指定されていればそれを使用、なければメールアドレスから生成
-      const displayName = guestName?.trim() || studentEmail.split('@')[0];
-      const studentNumber = studentEmail.split('@')[0]; // メールアドレスの@前を出席番号として使用
+      return NextResponse.json(
+        {
+          success: false,
+          error: '登録されていないメールアドレスです。教員に連絡してください。',
+        } as ApiResponse<never>,
+        { status: 401 }
+      );
+    }
 
-      const { data: newStudent, error: createError } = await supabase
-        .from('students')
-        .insert({
-          google_email: studentEmail,
-          display_name: displayName,
-          student_number: studentNumber,
-          class_id: session.class_id,
-        })
-        .select()
-        .single();
-
-      if (createError || !newStudent) {
-        console.error('Failed to create student:', createError);
-        return NextResponse.json(
-          {
-            success: false,
-            error: '生徒情報の作成に失敗しました',
-          } as ApiResponse<never>,
-          { status: 500 }
-        );
-      }
-
-      student = newStudent;
-    } else if (studentError) {
+    // その他のエラー
+    if (studentError || !student) {
       console.error('Failed to fetch student:', studentError);
       return NextResponse.json(
         {
@@ -102,31 +85,6 @@ export async function POST(request: NextRequest) {
           error: '生徒情報の取得に失敗しました',
         } as ApiResponse<never>,
         { status: 500 }
-      );
-    } else if (student && guestName?.trim()) {
-      // 既存生徒でguestNameが指定されている場合は表示名を更新
-      const { data: updatedStudent, error: updateError } = await supabase
-        .from('students')
-        .update({ display_name: guestName.trim() })
-        .eq('id', student.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Failed to update student display name:', updateError);
-        // 更新失敗してもログインは継続
-      } else if (updatedStudent) {
-        student = updatedStudent;
-      }
-    }
-
-    if (!student) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: '生徒情報が見つかりません',
-        } as ApiResponse<never>,
-        { status: 404 }
       );
     }
 

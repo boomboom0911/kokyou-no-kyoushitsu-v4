@@ -396,7 +396,7 @@ export default function TeacherDashboardPage() {
             {/* 右カラム: チャットパネル */}
             <div className="lg:col-span-1">
               {session && (
-                <div className="sticky top-6">
+                <div className="sticky top-6 h-[calc(100vh-12rem)]">
                   <ChatPanel sessionId={session.id} currentStudentId={0} isTeacher={true} />
                 </div>
               )}
@@ -444,6 +444,7 @@ export default function TeacherDashboardPage() {
                       author={seat.student}
                       currentStudentId={-999} // 教科担当者は-999を指定
                       seatNumber={seat.seat_number}
+                      onReactionChange={fetchSeats} // リアクション後に座席情報を更新
                     />
                   ) : null
                 )
