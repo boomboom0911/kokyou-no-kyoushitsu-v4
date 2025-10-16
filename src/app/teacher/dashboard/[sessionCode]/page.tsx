@@ -44,9 +44,9 @@ export default function TeacherDashboardPage() {
     fetchSeats();
   }, [router, sessionCode]);
 
-  // 自動更新
+  // 自動更新（提出トピック一覧表示中は停止）
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!autoRefresh || view === 'discussion') return;
 
     const interval = setInterval(() => {
       fetchSeats();
@@ -64,7 +64,7 @@ export default function TeacherDashboardPage() {
     }, 5000); // 5秒ごとに更新
 
     return () => clearInterval(interval);
-  }, [autoRefresh, session?.id, session?.class_id]);
+  }, [autoRefresh, session?.id, session?.class_id, view]);
 
   const fetchSession = async () => {
     try {
@@ -327,7 +327,7 @@ export default function TeacherDashboardPage() {
                 </button>
               )}
 
-              {/* 座席マップ/投稿一覧 切り替え */}
+              {/* 座席マップ/提出トピック一覧 切り替え */}
               <div className="flex gap-2">
                 <button
                   onClick={() => setView('seatmap')}
@@ -347,7 +347,7 @@ export default function TeacherDashboardPage() {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  💬 投稿一覧
+                  📝 提出トピック一覧
                 </button>
               </div>
 
@@ -405,42 +405,49 @@ export default function TeacherDashboardPage() {
         )}
 
         {view === 'discussion' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* 左カラム: 投稿一覧 */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white rounded-lg shadow p-4">
-                <h2 className="text-xl font-semibold">投稿一覧</h2>
+          <div className="space-y-4">
+            {/* ヘッダー */}
+            <div className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold">📝 提出トピック一覧</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  生徒が提出したトピックを確認できます（新しい順）
+                </p>
               </div>
-
-              {seats.filter((s) => s.topic_post).length === 0 ? (
-                <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-                  まだ投稿がありません
-                </div>
-              ) : (
-                seats
-                  .filter((s) => s.topic_post && s.student)
-                  .map((seat) =>
-                    seat.topic_post && seat.student ? (
-                      <TopicCard
-                        key={seat.topic_post.id}
-                        post={seat.topic_post}
-                        author={seat.student}
-                        currentStudentId={-999} // 教科担当者は-999を指定
-                        seatNumber={seat.seat_number}
-                      />
-                    ) : null
-                  )
-              )}
+              <button
+                onClick={fetchSeats}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
+              >
+                🔄 最新の投稿を見る
+              </button>
             </div>
 
-            {/* 右カラム: チャットパネル */}
-            <div className="lg:col-span-1">
-              {session && (
-                <div className="sticky top-6">
-                  <ChatPanel sessionId={session.id} currentStudentId={0} isTeacher={true} />
-                </div>
-              )}
-            </div>
+            {/* 投稿一覧（全幅・単一カラム、新しい順） */}
+            {seats.filter((s) => s.topic_post).length === 0 ? (
+              <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+                まだ投稿がありません
+              </div>
+            ) : (
+              seats
+                .filter((s) => s.topic_post && s.student)
+                .sort((a, b) => {
+                  // created_at で降順ソート（新しい順）
+                  const dateA = a.topic_post?.created_at ? new Date(a.topic_post.created_at).getTime() : 0;
+                  const dateB = b.topic_post?.created_at ? new Date(b.topic_post.created_at).getTime() : 0;
+                  return dateB - dateA;
+                })
+                .map((seat) =>
+                  seat.topic_post && seat.student ? (
+                    <TopicCard
+                      key={seat.topic_post.id}
+                      post={seat.topic_post}
+                      author={seat.student}
+                      currentStudentId={-999} // 教科担当者は-999を指定
+                      seatNumber={seat.seat_number}
+                    />
+                  ) : null
+                )
+            )}
           </div>
         )}
       </div>
