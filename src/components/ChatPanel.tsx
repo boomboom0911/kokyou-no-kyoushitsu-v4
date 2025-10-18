@@ -94,7 +94,7 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
         },
         body: JSON.stringify({
           sessionId,
-          studentId: isTeacher ? null : (currentStudentId === 0 ? -1 : currentStudentId), // 教科担当者はnull、ゲストは-1
+          studentId: currentStudentId === -999 ? null : (currentStudentId === 0 || currentStudentId === -1 ? -1 : currentStudentId), // 教科担当者(-999)はnull、ゲスト(0/-1)は-1
           message: newMessage.trim(),
         }),
       });

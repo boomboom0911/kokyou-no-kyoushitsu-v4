@@ -397,7 +397,7 @@ export default function TeacherDashboardPage() {
             <div className="lg:col-span-1">
               {session && (
                 <div className="sticky top-6 h-[calc(100vh-12rem)]">
-                  <ChatPanel sessionId={session.id} currentStudentId={0} isTeacher={true} />
+                  <ChatPanel sessionId={session.id} currentStudentId={-999} isTeacher={true} />
                 </div>
               )}
             </div>
@@ -415,7 +415,10 @@ export default function TeacherDashboardPage() {
                 </p>
               </div>
               <button
-                onClick={fetchSeats}
+                onClick={() => {
+                  fetchSeats();
+                  // 座席情報を更新後、リアクション情報も更新されるようにする
+                }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center gap-2"
               >
                 🔄 最新の投稿を見る

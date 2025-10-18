@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     const { targetType, targetId, reactionType, studentId } = body;
 
     // バリデーション
-    if (!targetType || !targetId || !reactionType || !studentId) {
+    if (!targetType || !targetId || !reactionType || studentId === undefined || studentId === null) {
       return NextResponse.json(
         {
           success: false,
@@ -215,7 +215,7 @@ export async function DELETE(request: NextRequest) {
     const { targetType, targetId, reactionType, studentId } = body;
 
     // バリデーション
-    if (!targetType || !targetId || !reactionType || !studentId) {
+    if (!targetType || !targetId || !reactionType || studentId === undefined || studentId === null) {
       return NextResponse.json(
         {
           success: false,
