@@ -12,6 +12,7 @@ interface SeatMapProps {
   currentStudentSeat?: number | null;
   currentStudentId?: number; // コメント・リアクション機能のために追加
   viewMode?: 'teacher' | 'student'; // 教科担当者視点 or 生徒視点（180度回転）
+  onReactionChange?: () => void; // リアクション・コメント変更時のコールバック
 }
 
 export default function SeatMap({
@@ -21,6 +22,7 @@ export default function SeatMap({
   currentStudentSeat,
   currentStudentId = 0,
   viewMode = 'teacher',
+  onReactionChange,
 }: SeatMapProps) {
   const [hoveredSeat, setHoveredSeat] = useState<number | null>(null);
   // 座席番号をマップに変換
@@ -208,6 +210,7 @@ export default function SeatMap({
                 currentStudentId={currentStudentId}
                 seatNumber={hoveredSeat}
                 autoShowComments={true}
+                onReactionChange={onReactionChange}
               />
 
               {/* 閉じるボタン */}

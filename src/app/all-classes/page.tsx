@@ -147,8 +147,8 @@ export default function AllClassesPage() {
     }
   };
 
-  const fetchSessionDetails = async (sessionId: number) => {
-    if (sessionDetails[sessionId]) {
+  const fetchSessionDetails = async (sessionId: number, forceRefresh = false) => {
+    if (sessionDetails[sessionId] && !forceRefresh) {
       // すでに取得済み
       return;
     }
@@ -380,7 +380,8 @@ export default function AllClassesPage() {
                           <SeatMap
                             seats={sessionDetails[session.id].seats}
                             viewMode="student"
-                            currentStudentId={currentStudentId}
+                            currentStudentId={isTeacher ? -999 : currentStudentId}
+                            onReactionChange={() => fetchSessionDetails(session.id, true)}
                           />
                         </div>
                       </div>
