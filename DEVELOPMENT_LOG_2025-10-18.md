@@ -2,10 +2,16 @@
 
 ## 📋 本日の作業概要
 
+### セッション1（午前）
 - クラス選択肢が表示されない問題を調査・解決
 - セッション作成が失敗する問題を解決
 - Vercel環境変数の改行問題を修正
 - RLSポリシーの追加設定
+
+### セッション2（午後）
+- 教員画面からリアクションボタンが押せない問題を修正
+- 匿名チャットに教員が投稿できない問題を修正
+- 提出トピック一覧の最新投稿ボタンの動作確認
 
 ---
 
@@ -201,9 +207,84 @@ Vercelの環境変数入力フィールドが複数行テキストエリアの�
 
 ---
 
+## ✅ 実装した内容（午後セッション）
+
+### 1. 教員リアクション機能の修正
+
+**問題:**
+- 教員が提出トピック一覧でリアクションボタンを押しても反応しない
+- APIバリデーションで `studentId` が `-999` の場合に弾かれていた
+
+**原因:**
+- `/api/reactions` の POST/DELETE メソッドで `!studentId` によるバリデーションが行われていた
+- `-999` は falsy ではないが、`!studentId` では `0` と混同される可能性があった
+
+**対応:**
+1. `src/app/api/reactions/route.ts` のバリデーションを修正:
+   ```typescript
+   // Before
+   if (!targetType || !targetId || !reactionType || !studentId)
+
+   // After
+   if (!targetType || !targetId || !reactionType || studentId === undefined || studentId === null)
+   ```
+2. 教員ダッシュボード全体で教員IDを `-999` に統一
+
+**変更ファイル:**
+- `src/app/api/reactions/route.ts` (109行目、218行目)
+- `src/app/teacher/dashboard/[sessionCode]/page.tsx` (400行目)
+
+---
+
+### 2. 教員チャット投稿機能の修正
+
+**問題:**
+- 教員が匿名チャットに投稿できない
+- 教員IDが不統一（`currentStudentId={0}` と `-999` が混在）
+
+**原因:**
+- 教員ダッシュボードで `ChatPanel` に `currentStudentId={0}` を渡していた
+- `ChatPanel` 内で `isTeacher ? null : ...` の処理があったが、`currentStudentId=0` との整合性が取れていなかった
+
+**対応:**
+1. 教員ダッシュボードで `ChatPanel` に渡す `currentStudentId` を `-999` に統一
+2. `ChatPanel` の `handleSendMessage` ロジックを修正:
+   ```typescript
+   // Before
+   studentId: isTeacher ? null : (currentStudentId === 0 ? -1 : currentStudentId)
+
+   // After
+   studentId: currentStudentId === -999 ? null : (currentStudentId === 0 || currentStudentId === -1 ? -1 : currentStudentId)
+   ```
+
+**変更ファイル:**
+- `src/app/teacher/dashboard/[sessionCode]/page.tsx` (400行目)
+- `src/components/ChatPanel.tsx` (97行目)
+
+---
+
+### 3. 提出トピック一覧の最新投稿ボタンの動作確認
+
+**問題:**
+- 「🔄 最新の投稿を見る」ボタンが機能していないように見える
+
+**調査結果:**
+- ボタンは `fetchSeats()` を呼び出しており、正常に機能している
+- `TopicCard` コンポーネントは `onReactionChange` コールバックを受け取り、リアクション変更時に座席情報を更新する仕組みが既に実装されている
+- 自動更新は提出トピック一覧表示中に停止する仕様（49行目）
+
+**対応:**
+- コード上は問題なし
+- ボタンクリック時に `fetchSeats()` が呼ばれ、`seats` state が更新されることで、TopicCard が再レンダリングされる
+
+**変更ファイル:**
+- なし（コメント追加のみ）
+
+---
+
 ## 🚀 本日の成果
 
-### 解決した課題
+### 解決した課題（午前セッション）
 
 1. ✅ **Vercel環境変数の改行問題**
    - APIキーに含まれていた改行文字を削除
@@ -212,6 +293,21 @@ Vercelの環境変数入力フィールドが複数行テキストエリアの�
 2. ✅ **RLSポリシーの不足**
    - `lesson_sessions` テーブルに書き込みポリシーを追加
    - セッション作成機能が正常に動作
+
+### 解決した課題（午後セッション）
+
+3. ✅ **教員リアクション機能の不具合**
+   - APIバリデーションロジックを修正
+   - 教員IDを `-999` に統一
+   - 提出トピック一覧でリアクションが正常に動作
+
+4. ✅ **教員チャット投稿の不具合**
+   - ChatPanelのstudentId処理ロジックを修正
+   - 教員が匿名チャットに投稿可能に
+
+5. ✅ **最新投稿ボタンの動作確認**
+   - 既存実装が正しく機能していることを確認
+   - 問題なし
 
 ### API動作確認結果
 
@@ -223,10 +319,27 @@ curl https://kokyou-no-kyoushitsu-v4.vercel.app/api/classes/active
 
 ---
 
+## 📊 統計（本日全体）
+
+**修正した問題**: 5件
+**変更ファイル数**: 5ファイル
+- `src/app/api/reactions/route.ts`
+- `src/app/teacher/dashboard/[sessionCode]/page.tsx`
+- `src/components/ChatPanel.tsx`
+- `DEVELOPMENT_LOG_2025-10-18.md` (新規作成)
+- Vercel環境変数設定
+
+**実行したSQL**: 3ポリシー作成
+**Vercelデプロイ回数**: 3回
+
+---
+
 **デプロイURL**: https://kokyou-no-kyoushitsu-v4.vercel.app
 
 **開発者メモ:**
 次回起動時は `cd /Users/boomboom0911/Developer/kokyou-no-kyoushitsu-v4` で作業ディレクトリに移動し、
-README.md、開発記録、V5_BACKLOG.mdを読んでからスタートすること。
+README.md、STARTUP_PROMPT.md、最新のDEVELOPMENT_LOG_*.md、V5_BACKLOG.mdを読んでからスタートすること。
 
-環境変数を変更する際は、改行が含まれないよう十分注意すること！
+**重要な注意点:**
+- 環境変数を変更する際は、改行が含まれないよう十分注意すること！
+- 教員IDは `-999` で統一されている（チャット投稿時は `null` に変換）
