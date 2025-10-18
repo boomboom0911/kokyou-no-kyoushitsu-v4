@@ -37,7 +37,63 @@
 
 ---
 
-### 2. 提出物セッション機能
+### 2. リアクションボタンに「異」（異なる意見）を追加
+
+**要求日**: 2025-10-19
+**要求内容**: 現在のリアクションボタン（驚・納・疑）に加えて、「異」（異なる意見）ボタンを追加する
+
+**必要な変更**:
+1. **データベース制約の変更**:
+   ```sql
+   -- reactionsテーブルのCHECK制約を変更
+   ALTER TABLE reactions
+     DROP CONSTRAINT IF EXISTS reactions_reaction_type_check;
+
+   ALTER TABLE reactions
+     ADD CONSTRAINT reactions_reaction_type_check
+     CHECK (reaction_type IN ('surprise', 'understand', 'question', 'disagree'));
+   ```
+
+2. **TypeScript型定義の更新** (src/types/index.ts):
+   ```typescript
+   export type ReactionType = 'surprise' | 'understand' | 'question' | 'disagree';
+
+   export const REACTIONS = {
+     // ... 既存のリアクション ...
+     disagree: {
+       id: 'disagree' as const,
+       kanji: '異',
+       label: '異なる意見',
+       tooltip: '異なる意見がある、別の視点を持っている',
+       color: '#8B5CF6', // 紫色
+       emoji: '🤔💭',
+     },
+   };
+   ```
+
+**実装の影響範囲**:
+- `src/types/index.ts`: 型定義とREACTIONS定数
+- `src/components/ReactionBar.tsx`: UI表示（自動的に対応）
+- `src/app/api/reactions/route.ts`: バリデーション（自動的に対応）
+
+**v4で見送った理由**:
+- データベースのCHECK制約変更が必要
+- 既存データに影響を与えるスキーマ変更
+- 安定性を優先し、段階的な実装を選択
+
+**v5での実装手順**:
+1. Supabaseで上記SQLを実行
+2. 型定義を更新
+3. 動作確認（既存のリアクション機能は変更不要）
+
+**将来の拡張案**:
+- リアクション種別を管理画面から追加・編集できる機能
+- セッションごとに使用するリアクション種別をカスタマイズ
+- 色やアイコンをカスタマイズ可能に
+
+---
+
+### 3. 提出物セッション機能
 
 **要求日**: 2025-10-15
 **要求内容**: メインセッション中に提出物専用のサブセッション画面を作成し、生徒がリンクを提出できる機能
@@ -137,7 +193,7 @@ CREATE TABLE submissions (
 
 ---
 
-### 3. チャットリプライ機能（スレッド表示）
+### 4. チャットリプライ機能（スレッド表示）
 
 **要求日**: 2025-10-15
 **要求内容**: 匿名チャットで特定メッセージへのリプライを可能にし、LINEのようなスレッド表示を実現する
@@ -249,7 +305,7 @@ interface ChatMessage {
 
 ---
 
-### 4. 生徒データの編集・削除機能
+### 5. 生徒データの編集・削除機能
 
 **要求日**: 2025-10-14
 **要求内容**: 管理者が生徒データを編集・削除できる機能

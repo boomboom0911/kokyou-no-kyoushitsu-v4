@@ -156,7 +156,17 @@ export default function TopicCard({
                         })}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-800">{comment.comment_text}</p>
+                    <p className="text-sm text-gray-800 mb-2">{comment.comment_text}</p>
+
+                    {/* コメントへのリアクションバー */}
+                    <div className="pt-2 border-t border-gray-200">
+                      <ReactionBar
+                        targetType="comment"
+                        targetId={comment.id}
+                        studentId={currentStudentId}
+                        onReactionChange={fetchComments}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
