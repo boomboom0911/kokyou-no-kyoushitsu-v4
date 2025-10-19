@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { ApiResponse, Interaction } from '@/types';
+import { createNotification } from '@/lib/notifications';
 
 /**
  * GET /api/interactions?targetType={type}&targetId={id}
@@ -148,6 +149,41 @@ export async function POST(request: NextRequest) {
         } as ApiResponse<never>,
         { status: 500 }
       );
+    }
+
+    // トピック投稿者に通知を送る（targetType === 'topic' の場合のみ）
+    if (targetType === 'topic' && studentId > 0) {
+      try {
+        // トピック情報を取得
+        const { data: topicPost } = await supabase
+          .from('topic_posts')
+          .select('*, sessions!inner(code, topic_title)')
+          .eq('id', targetId)
+          .single();
+
+        if (topicPost && topicPost.student_id !== studentId) {
+          const sessionCode = topicPost.sessions?.code || 'SESSION';
+          const topicTitle = topicPost.sessions?.topic_title || 'トピック';
+
+          await createNotification({
+            studentId: topicPost.student_id,
+            type: 'topic_comment_added',
+            sourceType: 'classroom',
+            sourceId: sessionCode,
+            relatedId: targetId.toString(),
+            title: 'トピックに新しいコメントがあります',
+            message: `「${topicTitle}」に新しいコメントが投稿されました`,
+            linkUrl: `/all-classes?session=${sessionCode}&topic=${targetId}`,
+            actorId: studentId,
+          });
+        }
+
+        // コメントしている他の生徒にも通知（将来的に実装可能）
+        // 現時点ではトピック投稿者のみに通知
+      } catch (notificationError) {
+        console.error('Notification creation error:', notificationError);
+        // 通知失敗してもコメント投稿は成功とする
+      }
     }
 
     const response: ApiResponse<Interaction> = {

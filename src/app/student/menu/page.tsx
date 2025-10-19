@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { storage } from '@/lib/storage';
 import { Student } from '@/types';
 import Link from 'next/link';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
+import { getUnreadCount } from '@/lib/notifications';
 
 export default function StudentMenuPage() {
   const router = useRouter();
@@ -14,6 +16,8 @@ export default function StudentMenuPage() {
   const [sessionCode, setSessionCode] = useState('');
   const [error, setError] = useState('');
   const [currentSession, setCurrentSession] = useState<{ code: string; title: string } | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     // 認証情報確認
@@ -34,6 +38,19 @@ export default function StudentMenuPage() {
         title: storedSession.topic_title,
       });
     }
+
+    // 未読通知数を取得
+    const fetchUnreadCount = async () => {
+      if (storedStudent?.id) {
+        const count = await getUnreadCount(storedStudent.id);
+        setUnreadCount(count);
+      }
+    };
+
+    fetchUnreadCount();
+    // 10秒ごとに更新
+    const interval = setInterval(fetchUnreadCount, 10000);
+    return () => clearInterval(interval);
   }, [router]);
 
   const handleLogout = () => {
@@ -91,6 +108,32 @@ export default function StudentMenuPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              {/* 通知ボタン */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors"
+                >
+                  🔔 通知
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && student && (
+                  <NotificationDropdown
+                    studentId={student.id}
+                    onClose={() => {
+                      setShowNotifications(false);
+                      // 通知数を再取得
+                      getUnreadCount(student.id).then(setUnreadCount);
+                    }}
+                  />
+                )}
+              </div>
+
               {currentSession && (
                 <button
                   onClick={() => router.push(`/classroom/${currentSession.code}`)}
@@ -110,8 +153,8 @@ export default function StudentMenuPage() {
         </div>
 
         {/* メニューカード */}
-        <div className="grid md:grid-cols-3 gap-6 mb-6">
-          {/* 新規セッション参加 */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {/* 1. 授業に参加 */}
           <div
             onClick={() => setShowJoinModal(true)}
             className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-500"
@@ -125,7 +168,20 @@ export default function StudentMenuPage() {
             </p>
           </div>
 
-          {/* ポートフォリオ */}
+          {/* 2. みんなの議論 */}
+          <Link href="/all-classes">
+            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-500">
+              <div className="text-4xl mb-4">🏛️</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                みんなの議論
+              </h2>
+              <p className="text-gray-600 mb-4">
+                全クラス・全授業のトピックを閲覧できます
+              </p>
+            </div>
+          </Link>
+
+          {/* 3. マイポートフォリオ */}
           <Link href="/student/portfolio">
             <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-green-500">
               <div className="text-4xl mb-4">📚</div>
@@ -138,15 +194,15 @@ export default function StudentMenuPage() {
             </div>
           </Link>
 
-          {/* みんなの議論 */}
-          <Link href="/all-classes">
-            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-500">
-              <div className="text-4xl mb-4">🏛️</div>
+          {/* 4. 掲示板 */}
+          <Link href="/board">
+            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-orange-500">
+              <div className="text-4xl mb-4">📋</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                みんなの議論
+                掲示板
               </h2>
               <p className="text-gray-600 mb-4">
-                全クラス・全授業のトピックを閲覧できます
+                課題提出とピアレビュー
               </p>
             </div>
           </Link>
