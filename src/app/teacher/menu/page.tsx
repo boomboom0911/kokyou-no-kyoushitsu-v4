@@ -53,29 +53,48 @@ export default function TeacherMenuPage() {
 
         {/* メニューカード */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* 1. 授業セッション管理 */}
-          <Link href="/teacher/create-session">
-            <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-500">
-              <div className="text-5xl mb-4">🏛️</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                授業セッション管理
-              </h2>
-              <p className="text-gray-600 mb-4">
-                新しい授業セッションを作成し、4桁のコードを生徒に共有します
-              </p>
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">できること:</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• セッション作成（4桁コード自動生成）</li>
-                  <li>• トピック・コメントのリアルタイム閲覧</li>
-                  <li>• 授業進行状況の確認</li>
-                  <li>• セッション終了管理</li>
-                </ul>
+          {/* 左カラム: 授業セッション管理 */}
+          <div className="space-y-6">
+            {/* 新しい授業セッション作成 */}
+            <Link href="/teacher/create-session">
+              <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-500">
+                <div className="text-5xl mb-4">🏛️</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  新しい授業セッション
+                </h2>
+                <p className="text-gray-600 mb-4">
+                  リアルタイム議論用のセッションを作成します
+                </p>
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">できること:</h3>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• セッション作成（4桁コード自動生成）</li>
+                    <li>• トピック・コメントのリアルタイム閲覧</li>
+                    <li>• 授業進行状況の確認</li>
+                    <li>• セッション終了管理</li>
+                  </ul>
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
 
-          {/* 2. 掲示板管理 */}
+            {/* みんなの議論・過去の授業 */}
+            <Link href="/all-classes">
+              <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-green-500">
+                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🏛️</span>
+                  <span>みんなの議論・過去の授業</span>
+                </h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  全クラス・全授業のトピックを閲覧できます
+                </p>
+                <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+                  生徒と同じビューで、過去から現在までの全セッションの議論を確認・コメントできます
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* 右カラム: 掲示板管理 */}
           <div className="space-y-6">
             {/* 新しい掲示板を作成 */}
             <Link href="/teacher/boards/create">
@@ -160,7 +179,7 @@ function BoardsList() {
 
   if (loading) {
     return (
-      <div className="text-center py-4 text-gray-500">
+      <div className="text-center py-4 text-gray-500 text-sm">
         読み込み中...
       </div>
     );
@@ -169,7 +188,7 @@ function BoardsList() {
   if (boards.length === 0) {
     return (
       <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
-        <p className="mb-2">まだ掲示板がありません</p>
+        <p className="mb-2 text-sm">まだ掲示板がありません</p>
         <p className="text-xs">「新しい掲示板を作成」から始めましょう</p>
       </div>
     );
@@ -177,7 +196,7 @@ function BoardsList() {
 
   return (
     <div className="space-y-2 max-h-64 overflow-y-auto">
-      {boards.map((board) => (
+      {boards.slice(0, 5).map((board) => (
         <button
           key={board.id}
           onClick={() => router.push(`/teacher/boards/${board.id}`)}
@@ -185,17 +204,23 @@ function BoardsList() {
         >
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              <h4 className="font-semibold text-gray-800">{board.title}</h4>
+              <h4 className="font-semibold text-gray-800 text-sm">{board.title}</h4>
               <p className="text-xs text-gray-500 mt-1">
                 コード: <span className="font-mono font-bold">{board.code}</span>
               </p>
             </div>
             <span className="text-xs text-gray-400">
-              {new Date(board.created_at).toLocaleDateString('ja-JP')}
+              {new Date(board.created_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })}
             </span>
           </div>
         </button>
       ))}
+      {boards.length > 5 && (
+        <p className="text-xs text-center text-gray-400 pt-2">
+          他 {boards.length - 5} 件
+        </p>
+      )}
     </div>
   );
 }
+
