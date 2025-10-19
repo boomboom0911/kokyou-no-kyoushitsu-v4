@@ -95,7 +95,7 @@ export default function Home() {
     try {
       if (teacherPassword === process.env.NEXT_PUBLIC_TEACHER_PASSWORD) {
         storage.save('teacher_auth', { authenticated: true });
-        router.push('/teacher/create-session'); // 直接セッション作成画面へ
+        router.push('/teacher/menu'); // メニューページへ
       } else {
         setTeacherError('パスワードが正しくありません');
       }
