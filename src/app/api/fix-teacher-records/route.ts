@@ -7,37 +7,53 @@ import { supabase } from '@/lib/supabase';
  */
 export async function POST(request: NextRequest) {
   try {
-    // 教員レコードを作成
-    const { data: teacher, error: teacherError } = await supabase
+    // まず既存のレコードを確認
+    const { data: existingTeacher } = await supabase
       .from('students')
-      .upsert({
-        id: -999,
-        google_email: 'teacher@system.local',
-        class_id: null,
-        student_number: 'TEACHER',
-        display_name: '教員',
-      }, {
-        onConflict: 'id',
-        ignoreDuplicates: false,
-      })
-      .select()
+      .select('*')
+      .eq('id', -999)
       .single();
 
-    // ゲストレコードを作成
-    const { data: guest, error: guestError } = await supabase
+    const { data: existingGuest } = await supabase
       .from('students')
-      .upsert({
-        id: -1,
-        google_email: 'guest@system.local',
-        class_id: null,
-        student_number: 'GUEST',
-        display_name: 'ゲスト',
-      }, {
-        onConflict: 'id',
-        ignoreDuplicates: false,
-      })
-      .select()
+      .select('*')
+      .eq('id', -1)
       .single();
+
+    let teacherError = null;
+    let guestError = null;
+
+    // 教員レコードが存在しない場合のみ作成
+    if (!existingTeacher) {
+      const result = await supabase
+        .from('students')
+        .insert({
+          id: -999,
+          google_email: 'teacher@system.local',
+          class_id: null,
+          student_number: 'TEACHER',
+          display_name: '教員',
+        })
+        .select()
+        .single();
+      teacherError = result.error;
+    }
+
+    // ゲストレコードが存在しない場合のみ作成
+    if (!existingGuest) {
+      const result = await supabase
+        .from('students')
+        .insert({
+          id: -1,
+          google_email: 'guest@system.local',
+          class_id: null,
+          student_number: 'GUEST',
+          display_name: 'ゲスト',
+        })
+        .select()
+        .single();
+      guestError = result.error;
+    }
 
     // 確認
     const { data: teacherCheck } = await supabase
