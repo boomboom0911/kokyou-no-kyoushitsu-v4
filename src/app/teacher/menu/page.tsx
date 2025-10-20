@@ -79,15 +79,15 @@ export default function TeacherMenuPage() {
 
             {/* みんなの議論・過去の授業 */}
             <Link href="/all-classes">
-              <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-green-500">
-                <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <span className="text-2xl">🏛️</span>
-                  <span>みんなの議論・過去の授業</span>
-                </h3>
-                <p className="text-sm text-gray-600 mb-3">
+              <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-green-500">
+                <div className="text-5xl mb-4">🏛️</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  みんなの議論・過去の授業
+                </h2>
+                <p className="text-gray-600">
                   全クラス・全授業のトピックを閲覧できます
                 </p>
-                <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+                <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3 mt-4">
                   生徒と同じビューで、過去から現在までの全セッションの議論を確認・コメントできます
                 </div>
               </div>

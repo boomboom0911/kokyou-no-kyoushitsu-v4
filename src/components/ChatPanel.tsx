@@ -66,7 +66,11 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // scrollIntoViewの代わりにコンテナのscrollTopを直接操作して、
+    // ページ全体がスクロールするのを防ぐ
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
     isUserScrollingRef.current = false;
   };
 

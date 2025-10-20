@@ -153,59 +153,65 @@ export default function StudentMenuPage() {
         </div>
 
         {/* メニューカード */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          {/* 1. 授業に参加 */}
-          <div
-            onClick={() => setShowJoinModal(true)}
-            className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-500"
-          >
-            <div className="text-4xl mb-4">🚪</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">
-              授業に参加
-            </h2>
-            <p className="text-gray-600 mb-4">
-              セッションコードを入力して新しい授業に参加します
-            </p>
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* 左カラム: 授業関連 */}
+          <div className="space-y-6">
+            {/* 1. 授業に参加 */}
+            <div
+              onClick={() => setShowJoinModal(true)}
+              className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-500"
+            >
+              <div className="text-5xl mb-4">🚪</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                授業に参加
+              </h2>
+              <p className="text-gray-600">
+                セッションコードを入力して新しい授業に参加します
+              </p>
+            </div>
+
+            {/* 2. みんなの議論 */}
+            <Link href="/all-classes">
+              <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-500">
+                <div className="text-5xl mb-4">🏛️</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  みんなの議論
+                </h2>
+                <p className="text-gray-600">
+                  全クラス・全授業のトピックを閲覧できます
+                </p>
+              </div>
+            </Link>
           </div>
 
-          {/* 2. みんなの議論 */}
-          <Link href="/all-classes">
-            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-500">
-              <div className="text-4xl mb-4">🏛️</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                みんなの議論
-              </h2>
-              <p className="text-gray-600 mb-4">
-                全クラス・全授業のトピックを閲覧できます
-              </p>
-            </div>
-          </Link>
+          {/* 右カラム: 個人関連 */}
+          <div className="space-y-6">
+            {/* 3. マイポートフォリオ */}
+            <Link href="/student/portfolio">
+              <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-green-500">
+                <div className="text-5xl mb-4">📚</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  マイポートフォリオ
+                </h2>
+                <p className="text-gray-600">
+                  学習メモや投稿履歴を確認・エクスポートできます
+                </p>
+              </div>
+            </Link>
 
-          {/* 3. マイポートフォリオ */}
-          <Link href="/student/portfolio">
-            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-green-500">
-              <div className="text-4xl mb-4">📚</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                マイポートフォリオ
-              </h2>
-              <p className="text-gray-600 mb-4">
-                学習メモや投稿履歴を確認・エクスポートできます
-              </p>
-            </div>
-          </Link>
-
-          {/* 4. 掲示板 */}
-          <Link href="/board">
-            <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-orange-500">
-              <div className="text-4xl mb-4">📋</div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-3">
-                掲示板
-              </h2>
-              <p className="text-gray-600 mb-4">
-                課題提出とピアレビュー
-              </p>
-            </div>
-          </Link>
+            {/* 4. 掲示板 */}
+            <Link href="/board">
+              <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-orange-500">
+                <div className="text-5xl mb-4">📋</div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                  掲示板
+                </h2>
+                <p className="text-gray-600">
+                  課題提出とピアレビュー
+                </p>
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
 
