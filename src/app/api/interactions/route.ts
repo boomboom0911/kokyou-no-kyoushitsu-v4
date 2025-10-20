@@ -140,8 +140,8 @@ export async function POST(request: NextRequest) {
     }
 
     // コメント投稿
-    // studentId が 0, -1, -999 の場合は教科担当者として null を設定
-    const finalStudentId = (studentId <= 0 || studentId === -999) ? null : studentId;
+    // studentId が 0 または -1 の場合は -1 (ゲスト)、-999 の場合はそのまま使用
+    const finalStudentId = studentId === 0 || studentId === -1 ? -1 : studentId;
     console.log('[Interactions API] Final studentId:', { original: studentId, final: finalStudentId });
 
     const { data: interaction, error: insertError } = await supabase
