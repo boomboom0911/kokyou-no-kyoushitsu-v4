@@ -54,11 +54,22 @@ export default function TopicCard({
         `/api/interactions?targetType=topic&targetId=${post.id}`
       );
       const data = await response.json();
+      console.log('[TopicCard] fetchComments response:', {
+        topicId: post.id,
+        success: data.success,
+        commentCount: data.data?.length || 0,
+        comments: data.data?.map((c: Comment) => ({
+          id: c.id,
+          student_id: c.student_id,
+          hasStudent: !!c.student,
+          comment: c.comment_text.substring(0, 20),
+        })),
+      });
       if (data.success) {
         setComments(data.data);
       }
     } catch (error) {
-      console.error('Failed to fetch comments:', error);
+      console.error('[TopicCard] Failed to fetch comments:', error);
     }
   };
 
