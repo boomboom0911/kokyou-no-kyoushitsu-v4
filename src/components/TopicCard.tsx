@@ -164,7 +164,14 @@ export default function TopicCard({
       {/* コメントセクション */}
       <div className="pt-2 border-t border-gray-100">
         <button
-          onClick={() => setShowComments(!showComments)}
+          onClick={() => {
+            console.log('[TopicCard] Toggle comments:', {
+              before: showComments,
+              after: !showComments,
+              commentsCount: comments.length,
+            });
+            setShowComments(!showComments);
+          }}
           className="text-sm text-blue-600 hover:text-blue-800 font-medium"
         >
           {showComments ? '💬 コメントを閉じる' : `💬 コメント ${comments.length > 0 ? `(${comments.length})` : ''}`}
@@ -172,8 +179,13 @@ export default function TopicCard({
 
         {showComments && (
           <div className="mt-3 space-y-3">
+            {/* デバッグ表示 */}
+            <div className="text-xs text-gray-500 bg-yellow-50 p-2 rounded">
+              DEBUG: showComments={showComments.toString()}, comments.length={comments.length}
+            </div>
+
             {/* コメント一覧 */}
-            {comments.length > 0 && (
+            {comments.length > 0 ? (
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {comments.map((comment) => (
                   <div key={comment.id} className="bg-gray-50 rounded-lg p-3">
@@ -205,6 +217,10 @@ export default function TopicCard({
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded">
+                まだコメントがありません
               </div>
             )}
 
