@@ -393,6 +393,7 @@ export default function ClassroomPage() {
                       currentStudentSeat={mySeat}
                       currentStudentId={student?.id || 0}
                       viewMode="student"
+                      onReactionChange={() => session && student && fetchSeats(session.id, student.id)}
                     />
                   </div>
 
