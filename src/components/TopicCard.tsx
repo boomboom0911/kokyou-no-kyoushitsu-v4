@@ -67,6 +67,12 @@ export default function TopicCard({
       return;
     }
 
+    // 認証チェック: currentStudentIdが有効な値かを確認
+    if (currentStudentId === 0 || currentStudentId === null || currentStudentId === undefined) {
+      alert('コメントを投稿するにはログインが必要です');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch('/api/interactions', {
@@ -87,6 +93,7 @@ export default function TopicCard({
       if (data.success) {
         setNewComment('');
         fetchComments();
+        onReactionChange?.(); // リアクション変更コールバックを実行
       } else {
         alert(`コメント送信失敗: ${data.error}`);
       }
@@ -189,24 +196,30 @@ export default function TopicCard({
             )}
 
             {/* コメント入力 */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
-                placeholder="コメントを入力..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 placeholder:text-gray-400"
-                disabled={loading}
-              />
-              <button
-                onClick={handlePostComment}
-                disabled={loading || !newComment.trim()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors text-sm font-medium"
-              >
-                {loading ? '送信中...' : '送信'}
-              </button>
-            </div>
+            {currentStudentId && currentStudentId !== 0 ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handlePostComment()}
+                  placeholder="コメントを入力..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-900 placeholder:text-gray-400"
+                  disabled={loading}
+                />
+                <button
+                  onClick={handlePostComment}
+                  disabled={loading || !newComment.trim()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors text-sm font-medium"
+                >
+                  {loading ? '送信中...' : '送信'}
+                </button>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                💡 コメントを投稿するには、生徒または教員としてログインしてください
+              </div>
+            )}
           </div>
         )}
       </div>
