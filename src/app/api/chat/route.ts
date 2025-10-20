@@ -90,8 +90,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { sessionId, studentId, message } = body;
 
+    console.log('[Chat API] POST request received:', {
+      sessionId,
+      studentId,
+      message: message?.substring(0, 50),
+    });
+
     // バリデーション
     if (!sessionId || !message) {
+      console.error('[Chat API] Validation failed: missing sessionId or message');
       return NextResponse.json(
         {
           success: false,
@@ -102,6 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (message.trim().length === 0) {
+      console.error('[Chat API] Validation failed: empty message');
       return NextResponse.json(
         {
           success: false,
@@ -113,6 +121,7 @@ export async function POST(request: NextRequest) {
 
     // studentId が 0 または -1 の場合は -1 (ゲスト) として設定、null の場合は -999 (教科担当者)
     const actualStudentId = studentId === null ? -999 : (studentId <= 0 ? -1 : studentId);
+    console.log('[Chat API] Converted studentId:', { original: studentId, actual: actualStudentId });
 
     // メッセージ投稿
     const { data: chatMessage, error: insertError } = await supabase
@@ -126,15 +135,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !chatMessage) {
-      console.error('Failed to create chat message:', insertError);
+      console.error('[Chat API] Failed to create chat message:', insertError);
       return NextResponse.json(
         {
           success: false,
           error: 'メッセージの送信に失敗しました',
+          details: insertError?.message,
         } as ApiResponse<never>,
         { status: 500 }
       );
     }
+
+    console.log('[Chat API] Message sent successfully:', chatMessage.id);
 
     const response: ApiResponse<typeof chatMessage> = {
       success: true,

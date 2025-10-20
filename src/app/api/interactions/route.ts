@@ -95,8 +95,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { targetType, targetId, studentId, commentText } = body;
 
+    console.log('[Interactions API] POST request received:', {
+      targetType,
+      targetId,
+      studentId,
+      commentText: commentText?.substring(0, 50),
+    });
+
     // バリデーション
-    if (!targetType || !targetId || !studentId || !commentText) {
+    if (!targetType || !targetId || studentId === undefined || studentId === null || !commentText) {
+      console.error('[Interactions API] Validation failed:', {
+        hasTargetType: !!targetType,
+        hasTargetId: !!targetId,
+        studentIdValue: studentId,
+        hasCommentText: !!commentText,
+      });
       return NextResponse.json(
         {
           success: false,
@@ -128,12 +141,15 @@ export async function POST(request: NextRequest) {
 
     // コメント投稿
     // studentId が 0, -1, -999 の場合は教科担当者として null を設定
+    const finalStudentId = (studentId <= 0 || studentId === -999) ? null : studentId;
+    console.log('[Interactions API] Final studentId:', { original: studentId, final: finalStudentId });
+
     const { data: interaction, error: insertError } = await supabase
       .from('interactions')
       .insert({
         target_type: targetType,
         target_id: targetId,
-        student_id: (studentId <= 0 || studentId === -999) ? null : studentId,
+        student_id: finalStudentId,
         type: 'comment',
         comment_text: commentText.trim(),
       })
@@ -141,15 +157,18 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError || !interaction) {
-      console.error('Failed to create interaction:', insertError);
+      console.error('[Interactions API] Failed to create interaction:', insertError);
       return NextResponse.json(
         {
           success: false,
           error: 'コメントの投稿に失敗しました',
+          details: insertError?.message,
         } as ApiResponse<never>,
         { status: 500 }
       );
     }
+
+    console.log('[Interactions API] Comment posted successfully:', interaction.id);
 
     // トピック投稿者に通知を送る（targetType === 'topic' の場合のみ）
     if (targetType === 'topic' && studentId > 0) {
