@@ -83,7 +83,13 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || loading) return;
+    if (!newMessage.trim() || loading) {
+      console.log('[ChatPanel] handleSendMessage blocked:', {
+        hasMessage: !!newMessage.trim(),
+        loading,
+      });
+      return;
+    }
 
     const finalStudentId = currentStudentId === -999 ? null : (currentStudentId === 0 || currentStudentId === -1 ? -1 : currentStudentId);
 
@@ -115,9 +121,11 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
         fetchMessages();
       } else {
         console.error('[ChatPanel] Failed to send message:', data);
+        alert(`チャット送信失敗: ${data.error}`);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('[ChatPanel] Failed to send message:', error);
+      alert('チャット送信中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -191,7 +199,14 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
             disabled={loading}
           />
           <button
-            onClick={handleSendMessage}
+            onClick={() => {
+              console.log('[ChatPanel] Send button clicked', {
+                disabled: loading || !newMessage.trim(),
+                loading,
+                hasMessage: !!newMessage.trim(),
+              });
+              handleSendMessage();
+            }}
             disabled={loading || !newMessage.trim()}
             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg transition-colors text-sm font-medium"
           >

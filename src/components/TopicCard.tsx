@@ -57,7 +57,20 @@ export default function TopicCard({
   };
 
   const handlePostComment = async () => {
-    if (!newComment.trim() || loading) return;
+    if (!newComment.trim() || loading) {
+      console.log('[TopicCard] handlePostComment blocked:', {
+        hasComment: !!newComment.trim(),
+        loading,
+      });
+      return;
+    }
+
+    console.log('[TopicCard] Posting comment:', {
+      targetType: 'topic',
+      targetId: post.id,
+      studentId: currentStudentId,
+      commentText: newComment.trim().substring(0, 50),
+    });
 
     setLoading(true);
     try {
@@ -75,12 +88,18 @@ export default function TopicCard({
       });
 
       const data = await response.json();
+      console.log('[TopicCard] Comment response:', response.status, data);
+
       if (data.success) {
         setNewComment('');
         fetchComments();
+      } else {
+        console.error('[TopicCard] Failed to post comment:', data);
+        alert(`コメント送信失敗: ${data.error}`);
       }
     } catch (error) {
-      console.error('Failed to post comment:', error);
+      console.error('[TopicCard] Failed to post comment:', error);
+      alert('コメント送信中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -184,7 +203,14 @@ export default function TopicCard({
                 disabled={loading}
               />
               <button
-                onClick={handlePostComment}
+                onClick={() => {
+                  console.log('[TopicCard] Send button clicked', {
+                    disabled: loading || !newComment.trim(),
+                    loading,
+                    hasComment: !!newComment.trim(),
+                  });
+                  handlePostComment();
+                }}
                 disabled={loading || !newComment.trim()}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors text-sm font-medium"
               >
