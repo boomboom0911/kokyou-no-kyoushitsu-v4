@@ -36,6 +36,12 @@ export default function TopicCard({
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // コンポーネントマウント時にコメント件数を取得
+  useEffect(() => {
+    fetchComments();
+  }, []);
+
+  // コメントセクション開閉時にも取得
   useEffect(() => {
     if (showComments) {
       fetchComments();
