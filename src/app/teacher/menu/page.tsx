@@ -119,12 +119,12 @@ export default function TeacherMenuPage() {
             </Link>
 
             {/* 掲示板一覧 */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                <span>📊</span>
-                <span>掲示板一覧</span>
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow border-2 border-transparent hover:border-indigo-500">
+              <div className="text-5xl mb-4">📊</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-3">
+                掲示板一覧
+              </h2>
+              <p className="text-gray-600 mb-4">
                 作成済みの掲示板を確認・管理できます
               </p>
               <BoardsList />
