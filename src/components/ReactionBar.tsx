@@ -46,6 +46,13 @@ export default function ReactionBar({
   const toggleReaction = async (reactionType: ReactionType) => {
     if (loading) return;
 
+    console.log('[ReactionBar] toggleReaction called:', {
+      targetType,
+      targetId,
+      studentId,
+      reactionType,
+    });
+
     setLoading(true);
 
     try {
@@ -53,6 +60,7 @@ export default function ReactionBar({
 
       if (isMyReaction) {
         // 削除
+        console.log('[ReactionBar] Deleting reaction...');
         const response = await fetch('/api/reactions', {
           method: 'DELETE',
           headers: {
@@ -66,12 +74,18 @@ export default function ReactionBar({
           }),
         });
 
+        const result = await response.json();
+        console.log('[ReactionBar] Delete response:', response.status, result);
+
         if (response.ok) {
           await fetchReactions();
           onReactionChange?.();
+        } else {
+          console.error('[ReactionBar] Failed to delete reaction:', result);
         }
       } else {
         // 追加
+        console.log('[ReactionBar] Adding reaction...');
         const response = await fetch('/api/reactions', {
           method: 'POST',
           headers: {
@@ -85,9 +99,14 @@ export default function ReactionBar({
           }),
         });
 
+        const result = await response.json();
+        console.log('[ReactionBar] Add response:', response.status, result);
+
         if (response.ok) {
           await fetchReactions();
           onReactionChange?.();
+        } else {
+          console.error('[ReactionBar] Failed to add reaction:', result);
         }
       }
     } catch (error) {

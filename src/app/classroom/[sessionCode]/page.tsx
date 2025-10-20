@@ -8,6 +8,8 @@ import SeatMap from '@/components/SeatMap';
 import ChatPanel from '@/components/ChatPanel';
 import QuickMemo from '@/components/QuickMemo';
 import TopicCard from '@/components/TopicCard';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
+import { getUnreadCount } from '@/lib/notifications';
 
 export default function ClassroomPage() {
   const params = useParams();
@@ -26,6 +28,8 @@ export default function ClassroomPage() {
   const [error, setError] = useState('');
   const [step, setStep] = useState<'select_seat' | 'post_topic'>('select_seat');
   const [view, setView] = useState<'seatmap' | 'topics'>('seatmap');
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     // 認証情報確認
@@ -42,7 +46,30 @@ export default function ClassroomPage() {
 
     // 座席情報を取得
     fetchSeats(storedSession.id, storedStudent.id);
+
+    // 未読通知数を取得
+    fetchUnreadCount(storedStudent.id);
   }, [sessionCode, router]);
+
+  // 未読通知数を定期的に取得（30秒ごと）
+  useEffect(() => {
+    if (!student?.id) return;
+
+    const interval = setInterval(() => {
+      fetchUnreadCount(student.id);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [student?.id]);
+
+  const fetchUnreadCount = async (studentId: number) => {
+    try {
+      const count = await getUnreadCount(studentId);
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Failed to fetch unread count:', error);
+    }
+  };
 
   const fetchSeats = async (sessionId: number, studentId: number) => {
     try {
@@ -215,18 +242,75 @@ export default function ClassroomPage() {
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* ヘッダー */}
       <div className="flex-shrink-0 max-w-7xl w-full mx-auto px-4 pt-2 pb-1.5">
-        <div className="bg-white rounded-lg shadow p-2.5">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-lg font-bold text-gray-800 leading-tight">
-                {session?.topic_title}
-              </h1>
-              <p className="text-[10px] text-gray-500">
-                {sessionCode} | {student?.display_name}
-                {mySeat && ` | 座席 ${mySeat}`}
-              </p>
-            </div>
+        <div className="bg-white rounded-lg shadow p-3">
+          {/* タイトル行 */}
+          <div className="mb-2">
+            <h1 className="text-lg font-bold text-gray-800 leading-tight">
+              {session?.topic_title}
+            </h1>
+            <p className="text-[10px] text-gray-500">
+              {sessionCode} | {student?.display_name}
+              {mySeat && ` | 座席 ${mySeat}`}
+            </p>
+          </div>
+
+          {/* タブ＋ボタン行 */}
+          <div className="flex items-center justify-between gap-3">
+            {/* 左側: タブ切り替え（座席選択完了後のみ表示） */}
+            {step === 'post_topic' && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setView('seatmap')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    view === 'seatmap'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  🗺️ 座席マップ
+                </button>
+                <button
+                  onClick={() => setView('topics')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    view === 'topics'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  📝 提出トピック一覧
+                </button>
+              </div>
+            )}
+            {step === 'select_seat' && <div></div>}
+
+            {/* 右側: アクションボタン */}
             <div className="flex items-center gap-2">
+              {/* 通知ベル */}
+              {student && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="relative text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    🔔 通知
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  {showNotifications && student && (
+                    <NotificationDropdown
+                      studentId={student.id}
+                      onClose={() => {
+                        setShowNotifications(false);
+                        fetchUnreadCount(student.id);
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+
               <button
                 onClick={() => router.push('/student/menu')}
                 className="text-xs bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1.5 rounded-lg transition-colors"
@@ -245,7 +329,7 @@ export default function ClassroomPage() {
                   disabled={loading}
                   className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
                 >
-                  座席をキャンセル
+                  座席キャンセル
                 </button>
               )}
               <button
@@ -296,32 +380,6 @@ export default function ClassroomPage() {
 
         {step === 'post_topic' && (
           <div className="space-y-3 py-2">
-            {/* タブ切り替え */}
-            <div className="bg-white rounded-lg shadow p-3">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setView('seatmap')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    view === 'seatmap'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  🗺️ 座席マップ
-                </button>
-                <button
-                  onClick={() => setView('topics')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    view === 'topics'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  📝 提出トピック一覧
-                </button>
-              </div>
-            </div>
-
             {/* 座席マップビュー */}
             {view === 'seatmap' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">

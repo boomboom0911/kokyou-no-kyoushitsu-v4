@@ -85,6 +85,14 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
   const handleSendMessage = async () => {
     if (!newMessage.trim() || loading) return;
 
+    const finalStudentId = currentStudentId === -999 ? null : (currentStudentId === 0 || currentStudentId === -1 ? -1 : currentStudentId);
+
+    console.log('[ChatPanel] handleSendMessage called:', {
+      currentStudentId,
+      finalStudentId,
+      message: newMessage.trim(),
+    });
+
     setLoading(true);
     try {
       const response = await fetch('/api/chat', {
@@ -94,15 +102,19 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
         },
         body: JSON.stringify({
           sessionId,
-          studentId: currentStudentId === -999 ? null : (currentStudentId === 0 || currentStudentId === -1 ? -1 : currentStudentId), // 教科担当者(-999)はnull、ゲスト(0/-1)は-1
+          studentId: finalStudentId, // 教科担当者(-999)はnull、ゲスト(0/-1)は-1
           message: newMessage.trim(),
         }),
       });
 
       const data = await response.json();
+      console.log('[ChatPanel] Send message response:', response.status, data);
+
       if (data.success) {
         setNewMessage('');
         fetchMessages();
+      } else {
+        console.error('[ChatPanel] Failed to send message:', data);
       }
     } catch (error) {
       console.error('Failed to send message:', error);
