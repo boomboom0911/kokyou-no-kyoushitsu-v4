@@ -74,11 +74,20 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
     try {
       const response = await fetch(`/api/chat?sessionId=${sessionId}`);
       const data = await response.json();
+      console.log('[ChatPanel] fetchMessages response:', {
+        success: data.success,
+        messageCount: data.data?.length || 0,
+        messages: data.data?.map((m: ChatMessage) => ({
+          id: m.id,
+          student_id: m.student_id,
+          message: m.message.substring(0, 20),
+        })),
+      });
       if (data.success) {
         setMessages(data.data);
       }
     } catch (error) {
-      console.error('Failed to fetch messages:', error);
+      console.error('[ChatPanel] Failed to fetch messages:', error);
     }
   };
 

@@ -482,3 +482,276 @@ README.md、STARTUP_PROMPT.md、最新のDEVELOPMENT_LOG_*.md、V5_BACKLOG.mdを
 - 教員ID `-999` で統一されている
 - デバッグログを追加したので、本番環境での動作確認が容易に
 - 通知機能は既存のインフラを活用、教室画面に統合しただけ
+
+---
+
+## 📋 午後セッション: チャット・コメント機能の修正
+
+### セッション2（午後）
+- チャット送信とコメント送信が失敗する問題を調査・解決
+- データベース制約の問題を回避するためにコードを修正
+- TopicCardのコメント表示問題を修正
+
+---
+
+## ✅ 実装した内容（午後）
+
+### 4. チャット送信の修正
+
+**問題:**
+- 教員が匿名チャットに投稿しようとすると失敗
+- エラー: `null value in column "student_id" of relation "chat_messages" violates not-null constraint`
+
+**原因:**
+- `chat_messages` テーブルの `student_id` カラムが NOT NULL 制約
+- 教員の場合に `null` を設定しようとしていた
+
+**対応:**
+1. Supabase SQL Editorで教員用レコードを作成:
+   ```sql
+   -- 教員用の特殊レコード
+   INSERT INTO students (id, google_email, class_id, student_number, display_name)
+   VALUES (-999, 'teacher@system', 1, 'T999', '教科担当者')
+   ON CONFLICT (id) DO NOTHING;
+
+   -- ゲスト用の特殊レコード
+   INSERT INTO students (id, google_email, class_id, student_number, display_name)
+   VALUES (-1, 'guest@system', 1, 'G000', 'ゲスト')
+   ON CONFLICT (id) DO NOTHING;
+   ```
+
+2. `src/app/api/chat/route.ts` を修正（89行目）:
+   ```typescript
+   // Before
+   student_id: isTeacher ? null : studentId,
+
+   // After
+   student_id: isTeacher ? -999 : studentId,
+   ```
+
+**変更ファイル:**
+- `src/app/api/chat/route.ts`
+- `fix-teacher-student-record.sql`（新規作成）
+
+**結果:**
+✅ 教員が匿名チャットに投稿できるようになった
+
+---
+
+### 5. コメント送信の修正
+
+**問題:**
+- 教員がトピックにコメントしようとすると失敗
+- エラー: `null value in column "student_id" of relation "interactions" violates not-null constraint`
+
+**原因:**
+- `interactions` テーブルの `student_id` カラムが主キー（Primary Key）の一部
+- 主キーは NULL を許可できない
+
+**調査:**
+```sql
+-- nullable に変更しようとしたがエラー
+ALTER TABLE interactions ALTER COLUMN student_id DROP NOT NULL;
+-- ERROR: 42P16: column "student_id" is in a primary key
+```
+
+**対応:**
+`src/app/api/interactions/route.ts` を修正（143-144行目）:
+```typescript
+// Before
+const finalStudentId = (studentId <= 0 || studentId === -999) ? null : studentId;
+
+// After
+const finalStudentId = studentId === 0 || studentId === -1 ? -1 : studentId;
+```
+
+**修正後の動作:**
+- 教員 (`studentId: -999`) → `-999` をそのまま使用 ✅
+- ゲスト (`studentId: 0` or `-1`) → `-1` に変換
+- 生徒 (`studentId: 1`以上) → そのまま使用
+
+**変更ファイル:**
+- `src/app/api/interactions/route.ts`
+
+**結果:**
+✅ 教員がトピックにコメントできるようになった
+
+---
+
+### 6. TopicCardのコメント表示問題を修正
+
+**問題:**
+- トピックカードのモーダルを開いてもコメントが表示されない
+- 座席マップ上のコメント件数は正しく表示される（例: 2件）
+- 「💬 コメント」ボタンをクリックしても空のまま
+
+**原因:**
+- `TopicCard.tsx` でコメントは「💬 コメント」ボタンをクリックしたときにしか取得されていなかった
+- モーダルを開いた時点では `showComments = false` で、コメント取得処理が実行されない
+- `comments.length` が0のままなので、ボタンにコメント件数も表示されない
+
+**対応:**
+`src/components/TopicCard.tsx` を修正（39-49行目）:
+```typescript
+// Before
+useEffect(() => {
+  if (showComments) {
+    fetchComments();
+  }
+}, [showComments]);
+
+// After
+// コンポーネントマウント時にコメント件数を取得
+useEffect(() => {
+  fetchComments();
+}, []);
+
+// コメントセクション開閉時にも取得
+useEffect(() => {
+  if (showComments) {
+    fetchComments();
+  }
+}, [showComments]);
+```
+
+**変更ファイル:**
+- `src/components/TopicCard.tsx`
+
+**結果:**
+✅ モーダルを開いた瞬間にコメントを取得するようになった
+✅ 「💬 コメント (2)」のように件数が正しく表示される
+✅ コメントセクションを開くとすぐにコメントが表示される
+
+---
+
+## 📊 統計（午後セッション）
+
+**修正した問題**: 3件
+- チャット送信の問題
+- コメント送信の問題
+- コメント表示の問題
+
+**変更ファイル数**: 3ファイル
+- `src/app/api/chat/route.ts`
+- `src/app/api/interactions/route.ts`
+- `src/components/TopicCard.tsx`
+
+**新規作成ファイル**: 1ファイル
+- `fix-teacher-student-record.sql`
+
+**Gitコミット数**: 2回
+- `interactions テーブルのstudent_id処理を修正`
+- `Fix: トピックカード開いた時にコメントを自動取得するように修正`
+
+**Vercelデプロイ回数**: 2回
+
+---
+
+## 🎯 解決した問題（午後セッション）
+
+### ✅ チャット送信の問題
+- **Before**: 教員がチャット送信しようとするとエラー
+- **After**: 教員が匿名チャットに投稿できる
+
+### ✅ コメント送信の問題
+- **Before**: 教員がコメント送信しようとするとエラー
+- **After**: 教員がトピックにコメントできる
+
+### ✅ コメント表示の問題
+- **Before**: トピックカードを開いてもコメントが表示されない
+- **After**: モーダルを開いた瞬間にコメントが取得され、件数も表示される
+
+---
+
+## 🔗 技術的な学び（午後セッション）
+
+### データベース制約とアプリケーション設計
+
+**問題点:**
+- NULL を使って「教員」や「ゲスト」を表現しようとすると、NOT NULL 制約や主キー制約に引っかかる
+- 外部キー制約により、存在しない student_id を使うことができない
+
+**解決策:**
+- 特殊な役割（教員、ゲスト）には固定IDを割り当てる
+  - 教員: `-999`
+  - ゲスト: `-1`
+- これらのIDに対応するレコードを `students` テーブルに作成
+- アプリケーション側で固定IDを一貫して使用
+
+**メリット:**
+- データベース制約を変更する必要がない（安全）
+- 外部キー制約が機能する
+- 既存のクエリが壊れない
+
+**デメリット:**
+- 固定IDの管理が必要
+- コードの複数箇所で固定IDの変換処理が必要
+
+### v5への申し送り
+
+V5では以下の改善を検討：
+1. 役割（Role）ベースの認証システムの導入
+   ```typescript
+   enum UserRole {
+     STUDENT = 'student',
+     TEACHER = 'teacher',
+     GUEST = 'guest',
+     ADMIN = 'admin',
+   }
+   ```
+
+2. `student_id` を `nullable` にしてクリーンなデータモデルに
+   - 主キー構成の見直し
+   - 固定IDから NULL への段階的な移行
+
+詳細は `V5_BACKLOG.md` を参照。
+
+---
+
+## 📝 次回への申し送り（更新）
+
+### 授業での実地テスト
+
+**2025-10-20 午前中に実施予定**
+
+**確認項目:**
+1. ✅ 生徒がセッションにログインできるか
+2. ✅ トピック投稿が正常に動作するか
+3. ✅ リアクション機能が正常に動作するか
+4. ✅ コメント機能が正常に動作するか（今回修正）
+5. ✅ チャット機能が正常に動作するか（今回修正）
+6. ✅ 教員ダッシュボードでリアルタイム更新が動作するか
+7. ✅ 通知機能が正常に動作するか
+
+**フィードバック:**
+授業終了後、使用感や発見された問題点を記録してください。
+
+---
+
+## 📌 重要なメモ（更新）
+
+### 教員・ゲストIDの統一
+
+**現在の仕様:**
+- 教員: `studentId = -999`
+- ゲスト: `studentId = -1`
+- 未ログイン: `studentId = 0`
+
+**使用箇所:**
+- `src/app/api/chat/route.ts`: 教員の場合 `-999` を使用
+- `src/app/api/interactions/route.ts`: 教員 `-999`、ゲスト `-1`
+- `src/components/ChatPanel.tsx`: `currentStudentId === -999` で教員判定
+- `src/components/TopicCard.tsx`: `student_id === -999` で教員表示
+- `src/app/teacher/dashboard/[sessionCode]/page.tsx`: `currentStudentId={-999}`
+
+**データベース:**
+- `students` テーブルに教員用レコード（id: -999）が存在
+- `students` テーブルにゲスト用レコード（id: -1）が存在
+
+**重要:**
+今後、教員・ゲスト判定を行う際は、この固定IDを使用すること。
+
+---
+
+**開発者メモ（更新）:**
+授業で使用中。フィードバックを待って次のセッションで改善を実施。

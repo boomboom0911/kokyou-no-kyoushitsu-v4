@@ -42,8 +42,14 @@ export async function GET(request: NextRequest) {
       .eq('session_id', sessionId)
       .order('created_at', { ascending: true });
 
+    console.log('[Chat API] GET - Retrieved messages:', {
+      count: messages?.length || 0,
+      studentIds: messages?.map(m => m.student_id) || [],
+      hasStudentsData: messages?.map(m => ({ id: m.student_id, hasData: !!m.students })) || [],
+    });
+
     if (error) {
-      console.error('Failed to fetch chat messages:', error);
+      console.error('[Chat API] Failed to fetch chat messages:', error);
       return NextResponse.json(
         {
           success: false,
