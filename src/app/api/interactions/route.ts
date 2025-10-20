@@ -39,14 +39,8 @@ export async function GET(request: NextRequest) {
       .eq('target_id', targetId)
       .order('created_at', { ascending: true });
 
-    console.log('[Interactions API] GET - Retrieved interactions:', {
-      count: interactions?.length || 0,
-      studentIds: interactions?.map(i => i.student_id) || [],
-      hasStudentsData: interactions?.map(i => ({ id: i.student_id, hasData: !!i.students })) || [],
-    });
-
     if (error) {
-      console.error('[Interactions API] Failed to fetch interactions:', error);
+      console.error('Failed to fetch interactions:', error);
       return NextResponse.json(
         {
           success: false,

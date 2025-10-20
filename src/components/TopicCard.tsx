@@ -54,40 +54,18 @@ export default function TopicCard({
         `/api/interactions?targetType=topic&targetId=${post.id}`
       );
       const data = await response.json();
-      console.log('[TopicCard] fetchComments response:', {
-        topicId: post.id,
-        success: data.success,
-        commentCount: data.data?.length || 0,
-        comments: data.data?.map((c: Comment) => ({
-          id: c.id,
-          student_id: c.student_id,
-          hasStudent: !!c.student,
-          comment: c.comment_text.substring(0, 20),
-        })),
-      });
       if (data.success) {
         setComments(data.data);
       }
     } catch (error) {
-      console.error('[TopicCard] Failed to fetch comments:', error);
+      console.error('Failed to fetch comments:', error);
     }
   };
 
   const handlePostComment = async () => {
     if (!newComment.trim() || loading) {
-      console.log('[TopicCard] handlePostComment blocked:', {
-        hasComment: !!newComment.trim(),
-        loading,
-      });
       return;
     }
-
-    console.log('[TopicCard] Posting comment:', {
-      targetType: 'topic',
-      targetId: post.id,
-      studentId: currentStudentId,
-      commentText: newComment.trim().substring(0, 50),
-    });
 
     setLoading(true);
     try {
@@ -105,17 +83,15 @@ export default function TopicCard({
       });
 
       const data = await response.json();
-      console.log('[TopicCard] Comment response:', response.status, data);
 
       if (data.success) {
         setNewComment('');
         fetchComments();
       } else {
-        console.error('[TopicCard] Failed to post comment:', data);
         alert(`コメント送信失敗: ${data.error}`);
       }
     } catch (error) {
-      console.error('[TopicCard] Failed to post comment:', error);
+      console.error('Failed to post comment:', error);
       alert('コメント送信中にエラーが発生しました');
     } finally {
       setLoading(false);
@@ -164,14 +140,7 @@ export default function TopicCard({
       {/* コメントセクション */}
       <div className="pt-2 border-t border-gray-100">
         <button
-          onClick={() => {
-            console.log('[TopicCard] Toggle comments:', {
-              before: showComments,
-              after: !showComments,
-              commentsCount: comments.length,
-            });
-            setShowComments(!showComments);
-          }}
+          onClick={() => setShowComments(!showComments)}
           className="text-sm text-blue-600 hover:text-blue-800 font-medium"
         >
           {showComments ? '💬 コメントを閉じる' : `💬 コメント ${comments.length > 0 ? `(${comments.length})` : ''}`}
@@ -179,11 +148,6 @@ export default function TopicCard({
 
         {showComments && (
           <div className="mt-3 space-y-3">
-            {/* デバッグ表示 */}
-            <div className="text-xs text-gray-500 bg-yellow-50 p-2 rounded">
-              DEBUG: showComments={showComments.toString()}, comments.length={comments.length}
-            </div>
-
             {/* コメント一覧 */}
             {comments.length > 0 ? (
               <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -236,14 +200,7 @@ export default function TopicCard({
                 disabled={loading}
               />
               <button
-                onClick={() => {
-                  console.log('[TopicCard] Send button clicked', {
-                    disabled: loading || !newComment.trim(),
-                    loading,
-                    hasComment: !!newComment.trim(),
-                  });
-                  handlePostComment();
-                }}
+                onClick={handlePostComment}
                 disabled={loading || !newComment.trim()}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors text-sm font-medium"
               >
