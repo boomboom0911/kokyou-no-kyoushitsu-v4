@@ -84,11 +84,17 @@ export default function TeacherMenuPage() {
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
                   みんなの議論・過去の授業
                 </h2>
-                <p className="text-gray-600">
+                <p className="text-gray-600 mb-4">
                   全クラス・全授業のトピックを閲覧できます
                 </p>
-                <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-3 mt-4">
-                  生徒と同じビューで、過去から現在までの全セッションの議論を確認・コメントできます
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">できること:</h3>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• 過去の授業の閲覧</li>
+                    <li>• 生徒の投稿・コメント確認</li>
+                    <li>• チャット履歴の確認</li>
+                    <li>• 欠席者リストの確認</li>
+                  </ul>
                 </div>
               </div>
             </Link>
@@ -119,7 +125,7 @@ export default function TeacherMenuPage() {
             </Link>
 
             {/* 掲示板一覧 */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow border-2 border-transparent hover:border-indigo-500">
+            <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-200">
               <div className="text-5xl mb-4">📊</div>
               <h2 className="text-2xl font-bold text-gray-800 mb-3">
                 掲示板一覧
