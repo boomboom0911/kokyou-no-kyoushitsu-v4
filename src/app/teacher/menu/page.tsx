@@ -56,7 +56,7 @@ export default function TeacherMenuPage() {
           {/* 左カラム: 授業セッション管理 */}
           <div className="space-y-6">
             {/* 新しい授業セッション作成 */}
-            <Link href="/teacher/create-session">
+            <Link href="/teacher/create-session" className="block">
               <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-500">
                 <div className="text-5xl mb-4">🏛️</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
@@ -78,7 +78,7 @@ export default function TeacherMenuPage() {
             </Link>
 
             {/* みんなの議論・過去の授業 */}
-            <Link href="/all-classes">
+            <Link href="/all-classes" className="block">
               <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-green-500">
                 <div className="text-5xl mb-4">🏛️</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">
@@ -103,7 +103,7 @@ export default function TeacherMenuPage() {
           {/* 右カラム: 掲示板管理 */}
           <div className="space-y-6">
             {/* 新しい掲示板を作成 */}
-            <Link href="/teacher/boards/create">
+            <Link href="/teacher/boards/create" className="block">
               <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-500">
                 <div className="text-5xl mb-4">📋</div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-3">

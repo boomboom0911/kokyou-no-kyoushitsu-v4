@@ -171,7 +171,8 @@ export async function POST(request: NextRequest) {
     console.log('[Interactions API] Comment posted successfully:', interaction.id);
 
     // トピック投稿者に通知を送る（targetType === 'topic' の場合のみ）
-    if (targetType === 'topic' && studentId > 0) {
+    // 生徒または教員（-999）からのコメントで通知を作成
+    if (targetType === 'topic' && (studentId > 0 || studentId === -999)) {
       try {
         // トピック情報を取得
         const { data: topicPost } = await supabase
@@ -180,9 +181,19 @@ export async function POST(request: NextRequest) {
           .eq('id', targetId)
           .single();
 
-        if (topicPost && topicPost.student_id !== studentId) {
+        // トピック投稿者が生徒（studentId > 0）で、かつコメント者が自分自身でない場合のみ通知
+        if (topicPost && topicPost.student_id > 0 && topicPost.student_id !== studentId) {
           const sessionCode = topicPost.sessions?.code || 'SESSION';
           const topicTitle = topicPost.sessions?.topic_title || 'トピック';
+
+          // コメント者の名前を取得
+          let actorName = '誰か';
+          if (studentId === -999) {
+            actorName = '教科担当者';
+          } else if (studentId > 0) {
+            // 生徒の場合は名前を取得（オプション）
+            actorName = '他の生徒';
+          }
 
           await createNotification({
             studentId: topicPost.student_id,
@@ -191,7 +202,7 @@ export async function POST(request: NextRequest) {
             sourceId: sessionCode,
             relatedId: targetId.toString(),
             title: 'トピックに新しいコメントがあります',
-            message: `「${topicTitle}」に新しいコメントが投稿されました`,
+            message: `「${topicTitle}」に${actorName}からコメントが投稿されました`,
             linkUrl: `/all-classes?session=${sessionCode}&topic=${targetId}`,
             actorId: studentId,
           });
