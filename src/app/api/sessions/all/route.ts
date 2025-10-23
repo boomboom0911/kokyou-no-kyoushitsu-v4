@@ -79,14 +79,20 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // クライアント側で並び替え: 終了していないセッション → 終了済みセッション
+    // クライアント側で並び替え: 進行中セッション → 実施日の降順
     const sortedSessions = sessionSummaries.sort((a, b) => {
       // ended_atがnullのセッション（進行中）を先に
       if (a.ended_at === null && b.ended_at !== null) return -1;
       if (a.ended_at !== null && b.ended_at === null) return 1;
 
-      // どちらも同じ状態なら、日付・時限の降順（既にソートされている）
-      return 0;
+      // どちらも同じ状態なら、実施日（date）の降順でソート
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      if (dateA > dateB) return -1;
+      if (dateA < dateB) return 1;
+
+      // 同じ日付なら時限の降順
+      return b.period - a.period;
     });
 
     const response: ApiResponse<{ sessions: SessionSummary[] }> = {
