@@ -17,6 +17,7 @@ interface SessionSummary {
   class_name: string | null;
   topic_count: number;
   started_at: string;
+  ended_at: string | null;
 }
 
 interface ChatMessage {
@@ -249,6 +250,35 @@ export default function AllClassesPage() {
     }
   };
 
+  const handleEndSession = async (sessionId: number) => {
+    if (!confirm('このセッションを終了しますか？\n欠席者が記録されます。')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${sessionId}/end`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // セッションリストを更新（ended_atを設定）
+        setSessions(sessions.map(s =>
+          s.id === sessionId
+            ? { ...s, ended_at: new Date().toISOString() }
+            : s
+        ));
+        alert('セッションを終了しました');
+      } else {
+        alert('セッション終了に失敗しました: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Failed to end session:', error);
+      alert('セッション終了中にエラーが発生しました');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -320,6 +350,16 @@ export default function AllClassesPage() {
                       <span className="text-sm text-gray-600">
                         🕐 {session.period}時限
                       </span>
+                      {/* 終了済みバッジ */}
+                      {session.ended_at ? (
+                        <span className="bg-gray-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                          ✓ 終了済み
+                        </span>
+                      ) : (
+                        <span className="bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold animate-pulse">
+                          ● 進行中
+                        </span>
+                      )}
                     </div>
                     <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
                       {session.class_name && (
@@ -327,16 +367,30 @@ export default function AllClassesPage() {
                       )}
                       {session.topic_title}
                       {isTeacher && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenEditModal(session);
-                          }}
-                          className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                          title="テーマを編集"
-                        >
-                          ✏️ 編集
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditModal(session);
+                            }}
+                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                            title="テーマを編集"
+                          >
+                            ✏️ 編集
+                          </button>
+                          {!session.ended_at && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEndSession(session.id);
+                              }}
+                              className="text-xs bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded"
+                              title="セッションを終了"
+                            >
+                              🔒 終了
+                            </button>
+                          )}
+                        </>
                       )}
                     </h2>
                     {session.topic_content && (

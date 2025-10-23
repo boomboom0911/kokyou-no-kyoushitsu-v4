@@ -13,6 +13,7 @@ interface SessionSummary {
   class_name: string | null;
   topic_count: number;
   started_at: string;
+  ended_at: string | null;
 }
 
 /**
@@ -21,7 +22,8 @@ interface SessionSummary {
  */
 export async function GET(request: NextRequest) {
   try {
-    // 全セッションを取得（日付・時限の降順）
+    // 全セッションを取得
+    // 並び順: 終了していないセッション → 終了済みセッション（日付・時限の降順）
     const { data: sessions, error: sessionsError } = await supabase
       .from('lesson_sessions')
       .select(`
@@ -33,6 +35,7 @@ export async function GET(request: NextRequest) {
         period,
         class_id,
         started_at,
+        ended_at,
         classes (
           name
         )
@@ -71,14 +74,25 @@ export async function GET(request: NextRequest) {
           class_name: session.classes?.name || null,
           topic_count: count || 0,
           started_at: session.started_at,
+          ended_at: session.ended_at,
         };
       })
     );
 
+    // クライアント側で並び替え: 終了していないセッション → 終了済みセッション
+    const sortedSessions = sessionSummaries.sort((a, b) => {
+      // ended_atがnullのセッション（進行中）を先に
+      if (a.ended_at === null && b.ended_at !== null) return -1;
+      if (a.ended_at !== null && b.ended_at === null) return 1;
+
+      // どちらも同じ状態なら、日付・時限の降順（既にソートされている）
+      return 0;
+    });
+
     const response: ApiResponse<{ sessions: SessionSummary[] }> = {
       success: true,
       data: {
-        sessions: sessionSummaries,
+        sessions: sortedSessions,
       },
     };
 
