@@ -1,0 +1,478 @@
+# 公共の教室 v5 仕様書
+
+**作成日**: 2025-01-19  
+**バージョン**: 1.0  
+**対象**: 開発実装用詳細仕様書
+
+---
+
+## 1. プロジェクト概要
+
+### 1.1 背景とコンテキスト
+
+「公共の教室」は、学校教育における生徒主体の学習を支援するWebアプリケーションです。
+
+- **v1-v3**: 基本的な授業支援機能の実装
+- **v4**: 個人が話題を提出できる仕組みの完成（授業セッション、掲示板セッション）
+- **v5**: 提出された話題について
+安心して非同期に議論できる場の実現（議論セッション追加）
+
+### 1.2 v5の核心コンセプト
+
+**「匿名の本音から生まれる、深い議論の場」**
+
+- v4で実現した話題提出機能を基盤に、その話題について議論する場を追加
+- 40人規模のクラスに最適化、5クラス、200人に対応
+- 予算ゼロで運用可能な設計
+
+---
+
+## 2. システムアーキテクチャ
+
+### 2.1 技術スタック（v4から継承）
+
+```yaml
+フロントエンド:
+  - Next.js 15 (App Router)
+  - TypeScript
+  - Tailwind CSS
+
+バックエンド:
+  - Supabase（無料枠で運用）
+    - PostgreSQL (500MB)
+    - Realtime（200接続まで）
+    - Auth（既存の認証システム）
+    - Storage (1GB)
+
+ホスティング:
+  - Vercel（無料枠）
+2.2 3層セッション構造公共の教室 v5
+├── 授業セッション（教室）    ← v4から継承
+├── 掲示板セッション（課題）  ← v4から継承
+└── 議論セッション（広場）    ← v5で新規追加
+3. v4からの継承機能3.1 既存機能の維持
+認証システム: 生徒/教員のログイン機能
+授業セッション: リアルタイムの授業進行
+掲示板セッション: トピック投稿と「驚・納・疑」リアクション
+通知システム: セッション更新の通知
+ポートフォリオ: 個人の学習記録
+3.2 v4の拡張点トピック機能の拡張
+「驚・納・疑」に「議」ボタンを追加
+トピックから議論への議題化機能
+タイトルと説明の分離入力
+4. v5新規機能仕様4.1 セッション生成の改善interface SessionCreation {
+  // セッションタイプ
+  type: 'lesson' | 'board' | 'discussion';
+  
+  // テーマ設定
+  theme: {
+    category: 'topic' | 'checkin' | 'checkout';
+    text: string;
+  };
+  
+  // テーマ履歴（オートコンプリート用）
+  themeHistory: string[];
+}
+4.2 議論セッション機能4.2.1 匿名チャットinterface AnonymousChat {
+  id: string;
+  sessionId: string;
+  anonymousId: string;  // 動物アイコンID
+  message: string;
+  reactions: {
+    thinking: number;   // 🤔
+    like: number;      // 👍
+    heart: number;     // ❤️
+    idea: number;      // 💡
+  };
+  discussionVotes: number;  // 議題化ボタン数
+  createdAt: Date;
+}
+4.2.2 議題化システム// 議題化条件（統一）
+const TOPIC_THRESHOLD = 3;  // 議題化ボタン3個以上
+
+// 議題化判定
+function canCreateDiscussion(votes: number): boolean {
+  return votes >= TOPIC_THRESHOLD;
+}
+4.2.3 議論ルームinterface DiscussionRoom {
+  id: string;
+  originType: 'chat' | 'topic';
+  originId: string;
+  
+  // チャット由来の場合
+  content?: string;  // 元のチャット内容
+  
+  // トピック由来の場合
+  title?: string;    // トピックタイトル
+  description?: string;  // トピック説明
+  
+  status: 'active' | 'closed';
+  createdAt: Date;
+  closedAt?: Date;
+  closedBy?: string;
+}
+4.2.4 参加モードenum ParticipationMode {
+  NAMED = 'named',       // 記名議論（実名・発言可）
+  ANONYMOUS = 'anonymous' // 匿名閲覧（動物アイコン・閲覧のみ）
+}
+
+interface Participant {
+  userId: string;
+  discussionId: string;
+  mode: ParticipationMode;
+  anonymousId?: string;  // 匿名参加時の動物ID
+  canClose: boolean;     // 議論終了権限（記名参加者のみtrue）
+}
+4.3 教員管理機能interface TeacherControls {
+  // 削除機能
+  deleteContent: (type: 'topic' | 'chat' | 'comment', id: string) => Promise<void>;
+  
+  // 制御機能
+  toggleAnonymousChat: (sessionId: string, enabled: boolean) => Promise<void>;
+  
+  // 緊急停止
+  closeDiscussion: (discussionId: string) => Promise<void>;
+}
+5. データベース設計5.1 v4からの既存テーブル-- 既存のテーブル（変更なし）
+- users
+- sessions
+- topics
+- notifications
+- portfolios
+5.2 v4テーブルの拡張-- topicsテーブルの拡張
+ALTER TABLE topics 
+ADD COLUMN title VARCHAR(255),
+ADD COLUMN description TEXT,
+ADD COLUMN discussion_votes INT DEFAULT 0;
+
+-- トピック入力を分離
+-- title: タイトル（最大50文字）
+-- description: 説明（最大500文字）
+5.3 v5新規テーブル-- 議論セッション
+CREATE TABLE discussion_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code VARCHAR(6) UNIQUE NOT NULL,
+    title TEXT,
+    theme_category VARCHAR(20), -- 'topic', 'checkin', 'checkout'
+    theme_text TEXT,
+    creator_id UUID REFERENCES users(id),
+    expires_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 匿名チャット
+CREATE TABLE anonymous_chats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES discussion_sessions(id),
+    anonymous_id VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    reactions JSONB DEFAULT '{"thinking": 0, "like": 0, "heart": 0, "idea": 0}',
+    discussion_votes INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 議論ルーム
+CREATE TABLE discussions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID REFERENCES discussion_sessions(id),
+    origin_type VARCHAR(10) NOT NULL, -- 'chat' or 'topic'
+    origin_id UUID NOT NULL,
+    title TEXT, -- NULLable for chat origin
+    content TEXT, -- Original chat content or topic description
+    status VARCHAR(20) DEFAULT 'active',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    closed_at TIMESTAMPTZ,
+    closed_by UUID REFERENCES users(id)
+);
+
+-- 議論参加者
+CREATE TABLE discussion_participants (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    discussion_id UUID REFERENCES discussions(id),
+    user_id UUID REFERENCES users(id),
+    participation_mode VARCHAR(20) NOT NULL, -- 'named' or 'anonymous'
+    anonymous_id VARCHAR(50),
+    can_close BOOLEAN DEFAULT FALSE,
+    joined_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(discussion_id, user_id)
+);
+
+-- 議論メッセージ
+CREATE TABLE discussion_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    discussion_id UUID REFERENCES discussions(id),
+    participant_id UUID REFERENCES discussion_participants(id),
+    message TEXT NOT NULL,
+    parent_message_id UUID REFERENCES discussion_messages(id),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- テーマ履歴（教員用）
+CREATE TABLE theme_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    teacher_id UUID REFERENCES users(id),
+    theme_category VARCHAR(20),
+    theme_text TEXT,
+    usage_count INT DEFAULT 1,
+    last_used TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 管理ログ（削除記録等）
+CREATE TABLE moderation_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    teacher_id UUID REFERENCES users(id),
+    action_type VARCHAR(50), -- 'delete', 'hide', 'stop'
+    target_type VARCHAR(50),
+    target_id UUID,
+    reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ポートフォリオ記録（議論）
+CREATE TABLE portfolio_discussions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    discussion_id UUID REFERENCES discussions(id),
+    role VARCHAR(20), -- 'creator', 'participant'
+    contributions_count INT DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- インデックス
+CREATE INDEX idx_discussions_session_id ON discussions(session_id);
+CREATE INDEX idx_discussion_participants_discussion_id ON discussion_participants(discussion_id);
+CREATE INDEX idx_discussion_messages_discussion_id ON discussion_messages(discussion_id);
+CREATE INDEX idx_theme_history_teacher_id ON theme_history(teacher_id);
+6. API設計6.1 エンドポイント構成// v4既存エンドポイント（維持）
+/api/auth/*
+/api/sessions/*
+/api/topics/*
+/api/notifications/*
+
+// v5新規エンドポイント
+/api/discussion/
+├── session/
+│   ├── POST   createDiscussionSession    // セッション作成
+│   ├── GET    getDiscussionSession       // セッション取得
+│   └── PUT    updateSessionTheme         // テーマ更新
+│
+├── chat/
+│   ├── POST   postAnonymousChat          // チャット投稿
+│   ├── GET    getChatHistory             // チャット履歴
+│   └── DELETE deleteChat                 // チャット削除（教員）
+│
+├── reaction/
+│   ├── POST   addReaction                // リアクション追加
+│   └── POST   addDiscussionVote          // 議題化ボタン
+│
+├── discussion/
+│   ├── POST   createDiscussion           // 議論ルーム作成
+│   ├── GET    listDiscussions            // 議論一覧
+│   └── [id]/
+│       ├── GET     getDiscussion         // 議論詳細
+│       ├── POST    joinDiscussion        // 参加
+│       ├── POST    postMessage           // 発言
+│       ├── PUT     closeDiscussion       // 終了
+│       └── GET     getArchive            // アーカイブ
+│
+└── moderation/
+    ├── POST   deleteContent               // コンテンツ削除
+    └── PUT    toggleAnonymousChat         // チャット機能制御
+6.2 Realtime購読// Supabase Realtime購読設定
+const subscriptions = {
+  // 匿名チャット
+  anonymousChats: supabase
+    .channel('anonymous_chats')
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'anonymous_chats'
+    }, handleChatUpdate),
+  
+  // 議論メッセージ
+  discussionMessages: supabase
+    .channel('discussion_messages')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'discussion_messages'
+    }, handleNewMessage),
+  
+  // リアクション更新
+  reactions: supabase
+    .channel('reactions')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'anonymous_chats',
+      filter: 'reactions'
+    }, handleReactionUpdate)
+};
+7. 画面構成7.1 v4既存画面（維持）/login              - ログイン
+/dashboard          - ダッシュボード
+/session/[code]     - セッション（授業・掲示板）
+/portfolio          - ポートフォリオ
+7.2 v5新規画面/discussion/
+├── create          - 議論セッション作成
+├── [code]          - 議論セッションメイン
+│   ├── /chat       - 匿名チャット
+│   └── /topics     - 議論一覧
+└── topic/[id]      - 個別議論ルーム
+7.3 主要コンポーネント構成// 匿名チャットコンポーネント
+<AnonymousChat>
+  <ChatMessage />
+  <ReactionBar />
+  <DiscussionVoteButton />
+</AnonymousChat>
+
+// 議論ルームコンポーネント
+<DiscussionRoom>
+  <ParticipationModeModal />
+  <MessageList>
+    <NamedMessage />      // 記名参加者の発言
+    <AnonymousViewer />   // 匿名閲覧者の表示
+  </MessageList>
+  <CloseDiscussionButton />  // 記名参加者のみ
+</DiscussionRoom>
+
+// 教員管理コンポーネント
+<TeacherControls>
+  <DeleteButton />
+  <ToggleChatButton />
+  <ModerationLog />
+</TeacherControls>
+8. 実装の優先順位とスケジュール8.1 フェーズ1: 基盤構築（必須機能）優先度機能工数詳細🔴DB設計・マイグレーション1日v5新規テーブル作成、v4テーブル拡張🔴議論セッション作成1日セッション生成、テーマ設定🔴匿名チャット基盤3日投稿、表示、リアルタイム更新🔴リアクション機能2日4種類のリアクション実装🔴議題化システム2日議題化ボタン、判定ロジック🔴議論ルーム基本機能3日作成、参加、メッセージ投稿🔴トピック入力分離1日タイトル/説明の分離フェーズ1合計: 13日8.2 フェーズ2: UX向上（重要機能）優先度機能工数詳細🟡参加モード切替1日記名/匿名の選択UI🟡テーマ履歴機能1日オートコンプリート🟡教員削除機能2日削除、ログ記録🟡カード表示UI2日議論一覧のカード表示🟡通知システム連携1日議題化通知フェーズ2合計: 7日8.3 フェーズ3: 完成度向上（追加機能）優先度機能工数詳細🔵アーカイブ機能2日終了後の保存と閲覧🔵ポートフォリオ連携1日議論履歴の記録🔵パフォーマンス最適化2日クエリ最適化、キャッシュフェーズ3合計: 5日総工数: 約25日（5週間）9. 実装上の注意事項9.1 セキュリティ
+教員権限の厳密な検証
+SQLインジェクション対策
+XSS対策（ユーザー入力のサニタイズ）
+レート制限の実装
+9.2 パフォーマンス
+Realtime接続数の管理（Supabase無料枠200接続）
+不要な再レンダリングの防止
+画像の遅延読み込み
+データベースインデックスの適切な設定
+9.3 UX配慮
+匿名参加者のプライバシー保護
+エラーメッセージの分かりやすさ
+ローディング状態の明示
+モバイル対応
+9.4 v4との互換性
+既存データの保護
+既存APIの維持
+段階的な移行パス
+10. テスト計画10.1 単体テスト// テスト対象
+- 議題化判定ロジック
+- 参加権限チェック
+- リアクション集計
+- 匿名ID生成
+10.2 統合テスト// テストシナリオ
+- チャット投稿 → 議題化 → 議論作成
+- トピック投稿 → 議題化 → 議論作成
+- 記名/匿名参加の切り替え
+- 議論終了 → ポートフォリオ保存
+10.3 負荷テスト
+40人同時接続での動作確認
+Realtime更新のレイテンシ測定
+11. デプロイ計画11.1 環境構成開発環境:
+  - localhost:3000
+  - Supabase開発プロジェクト
+
+ステージング環境:
+  - Vercelプレビュー
+  - Supabaseステージング
+
+本番環境:
+  - Vercel本番
+  - Supabase本番
+11.2 環境変数# Supabase
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
+# アプリケーション
+NEXT_PUBLIC_APP_URL=
+11.3 デプロイ手順
+データベースマイグレーション実行
+環境変数設定
+ビルド&デプロイ
+動作確認
+段階的ロールアウト
+12. 今後の拡張可能性12.1 短期的拡張（3ヶ月以内）
+AI要約機能（議論のまとめ自動生成）
+投票機能（議論内での意見集約）
+タグ機能（議論の分類）
+12.2 中期的拡張（1年以内）
+他校との議論連携
+動画/音声での議論参加
+学習分析ダッシュボード
+12.3 長期的ビジョン
+完全なLMS統合
+多言語対応
+AIファシリテーター
+13. 開発開始のためのチェックリスト
+ v4のコードベース確認
+ Supabaseプロジェクト設定
+ 開発環境構築
+ データベースマイグレーション準備
+ v4からのデータ移行計画
+ テスト用データ作成
+ CI/CD設定
+14. 参考情報リポジトリ
+v4: https://github.com/boomboom0911/kokyou-no-kyoushitsu-v4
+v5: https://github.com/boomboom0911/kokyou-no-kyoushitsu-v5
+技術ドキュメント
+Next.js 15: https://nextjs.org/docs
+Supabase: https://supabase.com/docs
+Tailwind CSS: https://tailwindcss.com/docs
+連絡先
+開発者: boomboom0911
+仕様策定: Claude (Anthropic)
+最終更新日: 2025-01-19
+次回レビュー予定: 2025-01-26付録A: 動物アイコンリストconst ANIMAL_ICONS = [
+  '🐸', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁',
+  '🐮', '🐷', '🐵', '🐶', '🐱', '🐭', '🐹', '🐻‍❄️',
+  '🦝', '🦘', '🦫', '🦦', '🦥', '🦔', '🐿️', '🦨'
+];
+付録B: エラーコード定義enum ErrorCode {
+  // 認証関連
+  AUTH_REQUIRED = 'AUTH_001',
+  PERMISSION_DENIED = 'AUTH_002',
+  
+  // 議論関連
+  DISCUSSION_NOT_FOUND = 'DISC_001',
+  DISCUSSION_CLOSED = 'DISC_002',
+  ALREADY_PARTICIPATING = 'DISC_003',
+  
+  // 議題化関連
+  INSUFFICIENT_VOTES = 'TOPIC_001',
+  ALREADY_CREATED = 'TOPIC_002',
+  
+  // システム
+  DATABASE_ERROR = 'SYS_001',
+  NETWORK_ERROR = 'SYS_002'
+}
+付録C: 開発用SQLサンプルデータ-- テストユーザー（教員）
+INSERT INTO users (id, email, name, role) VALUES
+  ('11111111-1111-1111-1111-111111111111', 'teacher@test.com', '山田先生', 'teacher');
+
+-- テストユーザー（生徒）
+INSERT INTO users (id, email, name, role) VALUES
+  ('22222222-2222-2222-2222-222222222222', 'student1@test.com', '田中太郎', 'student'),
+  ('33333333-3333-3333-3333-333333333333', 'student2@test.com', '佐藤花子', 'student');
+
+-- テスト議論セッション
+INSERT INTO discussion_sessions (id, code, title, creator_id) VALUES
+  ('44444444-4444-4444-4444-444444444444', 'ABC123', 'テスト議論セッション', '11111111-1111-1111-1111-111111111111');
+
+-- テスト匿名チャット
+INSERT INTO anonymous_chats (session_id, anonymous_id, message) VALUES
+  ('44444444-4444-4444-4444-444444444444', '🐸', 'これは面白い議題ですね'),
+  ('44444444-4444-4444-4444-444444444444', '🐰', 'もっと詳しく話し合いたいです');
+以上
+
+
+アイディア追加
+議論ルームには、生徒が直接議題を立てる機能もぜひつけてほしい。その場合には議題が立ったことを通知する必要はないと思うので、議論ルームに新しい議題が立ったときにバッジが出るように表示することができるだろうか
+
+トピックのコメントにも匿名チャットと同じように、特定のチャットにリアクションできる、あるいは返信できる形の回想構造を導入することができるだろうか。そしてその場合に、トピックのコメントにも議題ボタンが3つ付いたら議題化できる機能が付けられるものだろうか。

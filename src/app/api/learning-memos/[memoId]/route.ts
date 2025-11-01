@@ -8,10 +8,10 @@ import { ApiResponse, LearningMemo } from '@/types';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { memoId: string } }
+  { params }: { params: Promise<{ memoId: string }> }
 ) {
   try {
-    const { memoId } = params;
+    const { memoId } = await params;
     const body = await request.json();
     const { is_favorite, tags, content } = body;
 
@@ -101,10 +101,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { memoId: string } }
+  { params }: { params: Promise<{ memoId: string }> }
 ) {
   try {
-    const { memoId } = params;
+    const { memoId } = await params;
 
     const { error: deleteError } = await supabase
       .from('learning_memos')

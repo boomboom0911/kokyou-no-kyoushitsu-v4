@@ -7,10 +7,11 @@ import { incrementViewCount } from '@/lib/board/supabase-client';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await incrementViewCount(params.id);
+    const { id } = await params;
+    await incrementViewCount(id);
 
     return NextResponse.json({
       success: true,

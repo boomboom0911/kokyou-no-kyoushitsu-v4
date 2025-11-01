@@ -4,10 +4,11 @@ import { supabase } from '@/lib/supabase';
 // GET /api/sessions/[sessionId]/absentees - セッションの欠席者リストを取得
 export async function GET(
   request: Request,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    const sessionId = parseInt(params.sessionId);
+    const { sessionId: sessionIdParam } = await params;
+    const sessionId = parseInt(sessionIdParam);
 
     // セッション情報を取得してclass_idを確認
     const { data: session, error: sessionError } = await supabase

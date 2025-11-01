@@ -2,6 +2,11 @@
 
 教室での議論を可視化・活性化するWebアプリケーション
 
+> 📢 **v5開発に向けて基盤整備中**
+> - 🔧 [進捗レポート](./V4_CLEANUP_PROGRESS_REPORT.md) - Week 1-3の作業記録
+> - 🚀 [v5開発ガイド](./V5_DEVELOPMENT_GUIDE.md) - v5開発の指針
+> - ⚠️ セキュリティ強化（OAuth実装）が完了するまで本番運用は推奨しません
+
 ## 🌐 デモURL
 **https://kokyou-no-kyoushitsu-v4.vercel.app**
 
@@ -9,9 +14,15 @@
 
 ## 📚 ドキュメント
 
+### v4関連
 - 📖 [開発記録](./DEVELOPMENT_FINAL_REPORT.md) - プロジェクトの完成報告書
 - 🎬 [デモガイド](./DEMO_GUIDE.md) - すぐに試せるデモの方法
 - 🏫 [学校導入ガイド](./SCHOOL_DEPLOYMENT_GUIDE.md) - 自分の学校で使う方法
+
+### v5開発関連
+- 🔧 [進捗レポート](./V4_CLEANUP_PROGRESS_REPORT.md) - 基盤整備の進捗
+- 🚀 [v5開発ガイド](./V5_DEVELOPMENT_GUIDE.md) - 新機能開発の指針
+- 📋 [設計ドキュメント](./_docs/) - v4の詳細設計
 
 ---
 

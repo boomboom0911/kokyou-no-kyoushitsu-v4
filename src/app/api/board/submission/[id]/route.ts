@@ -7,10 +7,11 @@ import { getSubmissionById } from '@/lib/board/supabase-client';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const submission = await getSubmissionById(params.id);
+    const { id } = await params;
+    const submission = await getSubmissionById(id);
 
     if (!submission) {
       return NextResponse.json(

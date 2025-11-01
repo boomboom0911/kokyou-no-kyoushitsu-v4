@@ -281,9 +281,239 @@ export interface Database {
           exported_at?: string
         }
       }
+      boards: {
+        Row: {
+          id: string
+          code: string
+          title: string
+          description: string | null
+          min_reviews_required: number
+          min_reviews_to_give: number
+          submission_deadline: string | null
+          review_deadline: string | null
+          target_students: string[] | null
+          is_public: boolean
+          status: string
+          allow_edit_after_review: boolean
+          show_author_names: boolean
+          created_by: number | null
+          created_at: string
+          updated_at: string
+          settings: Json | null
+        }
+        Insert: {
+          id?: string
+          code: string
+          title: string
+          description?: string | null
+          min_reviews_required?: number
+          min_reviews_to_give?: number
+          submission_deadline?: string | null
+          review_deadline?: string | null
+          target_students?: string[] | null
+          is_public?: boolean
+          status?: string
+          allow_edit_after_review?: boolean
+          show_author_names?: boolean
+          created_by?: number | null
+          created_at?: string
+          updated_at?: string
+          settings?: Json | null
+        }
+        Update: {
+          id?: string
+          code?: string
+          title?: string
+          description?: string | null
+          min_reviews_required?: number
+          min_reviews_to_give?: number
+          submission_deadline?: string | null
+          review_deadline?: string | null
+          target_students?: string[] | null
+          is_public?: boolean
+          status?: string
+          allow_edit_after_review?: boolean
+          show_author_names?: boolean
+          created_by?: number | null
+          created_at?: string
+          updated_at?: string
+          settings?: Json | null
+        }
+      }
+      board_submissions: {
+        Row: {
+          id: string
+          board_id: string
+          student_id: number
+          title: string
+          description: string | null
+          work_url: string
+          work_type: string
+          view_count: number
+          review_count: number
+          is_edited: boolean
+          edit_count: number
+          last_edited_at: string | null
+          visibility: string
+          is_featured: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          board_id: string
+          student_id: number
+          title: string
+          description?: string | null
+          work_url: string
+          work_type: string
+          view_count?: number
+          review_count?: number
+          is_edited?: boolean
+          edit_count?: number
+          last_edited_at?: string | null
+          visibility?: string
+          is_featured?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          board_id?: string
+          student_id?: number
+          title?: string
+          description?: string | null
+          work_url?: string
+          work_type?: string
+          view_count?: number
+          review_count?: number
+          is_edited?: boolean
+          edit_count?: number
+          last_edited_at?: string | null
+          visibility?: string
+          is_featured?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      peer_reviews: {
+        Row: {
+          id: string
+          submission_id: string
+          reviewer_id: number
+          strengths: string[]
+          suggestions: string[]
+          questions: string[]
+          overall_comment: string | null
+          character_count: number
+          helpful_count: number
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          submission_id: string
+          reviewer_id: number
+          strengths?: string[]
+          suggestions?: string[]
+          questions?: string[]
+          overall_comment?: string | null
+          character_count?: number
+          helpful_count?: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          submission_id?: string
+          reviewer_id?: number
+          strengths?: string[]
+          suggestions?: string[]
+          questions?: string[]
+          overall_comment?: string | null
+          character_count?: number
+          helpful_count?: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      reviewer_profiles: {
+        Row: {
+          id: string
+          student_id: number
+          board_id: string
+          animal_type: string
+          level: number
+          review_count: number
+          helpful_total: number
+          total_characters: number
+          decorations: string[]
+          badges: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: number
+          board_id: string
+          animal_type: string
+          level?: number
+          review_count?: number
+          helpful_total?: number
+          total_characters?: number
+          decorations?: string[]
+          badges?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          student_id?: number
+          board_id?: string
+          animal_type?: string
+          level?: number
+          review_count?: number
+          helpful_total?: number
+          total_characters?: number
+          decorations?: string[]
+          badges?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
-      [_ in never]: never
+      submission_with_stats: {
+        Row: {
+          id: string
+          board_id: string
+          student_id: number
+          title: string
+          description: string | null
+          work_url: string
+          work_type: string
+          view_count: number
+          review_count: number
+          is_edited: boolean
+          edit_count: number
+          last_edited_at: string | null
+          visibility: string
+          is_featured: boolean
+          created_at: string
+          updated_at: string
+          class_id: number | null
+          student_number: string
+          student_name: string
+          review_count_actual: number
+          total_helpful: number
+          reviews_given_count: number
+        }
+        Insert: never
+        Update: never
+      }
     }
     Functions: {
       [_ in never]: never

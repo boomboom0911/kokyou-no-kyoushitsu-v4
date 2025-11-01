@@ -8,12 +8,13 @@ import { stringify } from 'csv-stringify/sync';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { searchParams } = new URL(request.url);
     const exportType = searchParams.get('type') || 'submissions';
-    const boardId = params.id;
+    const boardId = id;
 
     if (exportType === 'submissions') {
       // 提出一覧CSV

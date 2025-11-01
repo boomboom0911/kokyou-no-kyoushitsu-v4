@@ -7,10 +7,11 @@ import { getBoardById } from '@/lib/board/supabase-client';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const board = await getBoardById(params.id);
+    const { id } = await params;
+    const board = await getBoardById(id);
 
     if (!board) {
       return NextResponse.json(
