@@ -27,11 +27,21 @@ const ANIMAL_ICONS = [
   '🦑', '🦐'
 ];
 
-// student_idから一意な動物アイコンを取得
-const getAnimalIcon = (studentId: number | null): string => {
+// student_idとsessionIdから一意な動物アイコンを取得（セッションごとに変わる）
+const getAnimalIcon = (studentId: number | null, sessionId: number): string => {
   if (studentId === null || studentId === -1 || studentId === -999 || studentId <= 0) return '';
 
-  const index = studentId % ANIMAL_ICONS.length;
+  // セッションごとに異なる動物を割り当てるためのハッシュ計算
+  const combined = `${studentId}-${sessionId}`;
+  let hash = 0;
+
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // 32bit整数に変換
+  }
+
+  const index = Math.abs(hash) % ANIMAL_ICONS.length;
   return ANIMAL_ICONS[index];
 };
 
@@ -181,7 +191,7 @@ export default function ChatPanel({ sessionId, currentStudentId, isTeacher = fal
                   ) : msg.student_id === -1 ? (
                     <span>🎭 ゲスト</span>
                   ) : (
-                    <span className="text-base">{getAnimalIcon(msg.student_id)}</span>
+                    <span className="text-base">{getAnimalIcon(msg.student_id, sessionId)}</span>
                   )}
                   <span>
                     •{' '}

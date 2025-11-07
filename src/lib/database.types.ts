@@ -514,6 +514,56 @@ export interface Database {
         Insert: never
         Update: never
       }
+      notifications: {
+        Row: {
+          id: string
+          student_id: number
+          type: 'board_review_received' | 'board_reply_received' | 'topic_comment_added'
+          source_type: 'board' | 'classroom'
+          source_id: string | null
+          related_id: string | null
+          title: string
+          message: string | null
+          link_url: string
+          actor_id: number | null
+          actor_name: string | null
+          is_read: boolean
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          student_id: number
+          type: 'board_review_received' | 'board_reply_received' | 'topic_comment_added'
+          source_type: 'board' | 'classroom'
+          source_id?: string | null
+          related_id?: string | null
+          title: string
+          message?: string | null
+          link_url: string
+          actor_id?: number | null
+          actor_name?: string | null
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          student_id?: number
+          type?: 'board_review_received' | 'board_reply_received' | 'topic_comment_added'
+          source_type?: 'board' | 'classroom'
+          source_id?: string | null
+          related_id?: string | null
+          title?: string
+          message?: string | null
+          link_url?: string
+          actor_id?: number | null
+          actor_name?: string | null
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+      }
     }
     Functions: {
       [_ in never]: never
